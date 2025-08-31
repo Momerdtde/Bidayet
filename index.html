@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alışkanlık Bırakma Takipçisi</title>
+    <title>Bidayet - Alışkanlık Takibi</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -31,20 +31,55 @@
             from { opacity: 0; }
             to { opacity: 1; }
         }
+        /* Hide views by default */
+        #habits-list-view, #add-habit-view, #tracker-view, #auth-view {
+            display: none;
+        }
     </style>
 </head>
 <body class="bg-slate-900 text-slate-300 flex items-center justify-center min-h-screen p-4">
 
     <div id="app-container" class="w-full max-w-md mx-auto bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-lg transition-all duration-300">
 
+        <!-- Giriş/Kayıt Ekranı -->
+        <div id="auth-view">
+             <div class="text-center mb-8">
+                 <h1 class="text-3xl font-bold text-white">Bidayet'e Hoş Geldiniz</h1>
+                 <p class="text-slate-400 mt-2">Alışkanlıklarınızı yönetmek için giriş yapın.</p>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form" class="space-y-4">
+                <input type="email" id="login-email" placeholder="E-posta" required class="w-full px-4 py-3 bg-slate-700 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-purple-500">
+                <input type="password" id="login-password" placeholder="Şifre" required class="w-full px-4 py-3 bg-slate-700 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-purple-500">
+                <button type="submit" class="w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700">Giriş Yap</button>
+                <p class="text-center text-sm text-slate-400">Hesabın yok mu? <button type="button" id="show-register-btn" class="font-semibold text-purple-400 hover:underline">Kayıt Ol</button></p>
+            </form>
+
+            <!-- Register Form -->
+            <form id="register-form" class="space-y-4 hidden">
+                 <input type="email" id="register-email" placeholder="E-posta" required class="w-full px-4 py-3 bg-slate-700 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-purple-500">
+                <input type="password" id="register-password" placeholder="Şifre" required class="w-full px-4 py-3 bg-slate-700 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-purple-500">
+                <button type="submit" class="w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700">Kayıt Ol</button>
+                 <p class="text-center text-sm text-slate-400">Zaten hesabın var mı? <button type="button" id="show-login-btn" class="font-semibold text-purple-400 hover:underline">Giriş Yap</button></p>
+            </form>
+            <p id="auth-error" class="text-red-400 text-center mt-4 h-4"></p>
+        </div>
+
         <!-- Alışkanlık Listesi Ekranı -->
         <div id="habits-list-view">
-            <div class="text-center mb-6">
+            <div class="text-center mb-6 relative">
+                 <button id="logout-btn" class="absolute top-0 right-0 text-slate-400 hover:text-white" title="Çıkış Yap">
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                       <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                     </svg>
+                 </button>
                 <svg class="mx-auto h-12 w-12 text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
                 </svg>
-                <h1 class="text-2xl font-bold mt-4 text-white">Alışkanlıklarım</h1>
-                <p class="text-slate-400 mt-2">Yeni bir başlangıç yap veya devam et.</p>
+                <h1 class="text-3xl font-bold mt-4 text-white">Bidayet</h1>
+                <p class="text-slate-400 mt-1">Alışkanlık Takibi</p>
+                <p id="user-email-display" class="text-slate-400 mt-2 text-sm"></p>
             </div>
             <div id="habits-list" class="space-y-3 mb-6"></div>
             <button id="add-new-habit-btn" class="w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-transform transform hover:scale-102">
@@ -53,7 +88,7 @@
         </div>
 
         <!-- Yeni Alışkanlık Ekleme Ekranı -->
-        <div id="add-habit-view" class="hidden">
+        <div id="add-habit-view">
             <h1 class="text-2xl font-bold text-center mb-6 text-white">Yeni Bir Başlangıç</h1>
             <div class="space-y-4">
                 <input type="text" id="habit-input" placeholder="Örn: Sigarayı bırakmak" class="w-full px-4 py-3 bg-slate-700 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors">
@@ -71,7 +106,7 @@
         </div>
 
         <!-- Takip Ekranı -->
-        <div id="tracker-view" class="hidden relative">
+        <div id="tracker-view" class="relative">
             <button id="back-from-tracker-btn" class="absolute top-0 left-0 text-slate-400 hover:text-white p-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" /></svg></button>
             <div class="text-center pt-8 flex flex-col items-center">
                  <div id="habit-icon-display" class="w-12 h-12 mb-2"></div>
@@ -90,8 +125,14 @@
 
             <h3 class="font-bold text-center my-3 text-slate-400">İlerleme Zinciri</h3>
             <div id="chain-container" class="flex flex-wrap justify-center gap-2 p-4 bg-slate-900 rounded-lg border border-slate-700 min-h-[56px]"></div>
+            
+            <h3 class="font-bold text-center my-3 text-slate-400">Başa Dönmeler</h3>
+            <div id="restarts-container" class="flex flex-wrap justify-center gap-2 p-4 bg-slate-900 rounded-lg border border-slate-700 min-h-[56px]"></div>
 
-            <button id="delete-habit-btn" class="w-full mt-6 bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700">Alışkanlığı Sil</button>
+            <div class="grid grid-cols-2 gap-4 mt-6">
+                <button id="restart-habit-btn" class="w-full bg-yellow-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-yellow-700 transition-colors">Yeniden Başla</button>
+                <button id="delete-habit-btn" class="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 transition-colors">Alışkanlığı Sil</button>
+            </div>
         </div>
     </div>
     
@@ -106,38 +147,74 @@
             </div>
         </div>
     </div>
+    
+    <!-- Yeniden Başlatma Onay Modalı -->
+    <div id="restart-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4">
+        <div class="bg-slate-800 rounded-lg p-8 shadow-xl max-w-sm w-full text-center border border-slate-700">
+            <h2 class="text-xl font-bold mb-4 text-white">Yeniden Başlatılsın mı?</h2>
+            <p class="text-slate-400 mb-6">Sayaç sıfırlanacak ve bu bir başa dönme olarak kaydedilecek. Emin misin?</p>
+            <div class="flex justify-center gap-4">
+                <button id="cancel-restart-btn" class="w-full bg-slate-600 text-slate-200 font-bold py-2 px-4 rounded-lg hover:bg-slate-500">İptal</button>
+                <button id="confirm-restart-btn" class="w-full bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-700">Yeniden Başlat</button>
+            </div>
+        </div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, collection, onSnapshot, addDoc, deleteDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, collection, onSnapshot, addDoc, deleteDoc, updateDoc, increment, arrayUnion } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Simgeler ve Ödüller ---
         const ICONS = {
             'no-smoking': `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full text-red-400"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12.75l-7.5-7.5-7.5 7.5" transform="translate(0, -2)"/><path stroke-linecap="round" d="M19.5 12.75v-3.75c0-1.036-.84-1.875-1.875-1.875H6.375C5.339 7.125 4.5 7.964 4.5 9v3.75" /></svg>`,
             'no-coffee': `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full text-yellow-700"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 3v.75m-1.5-1.5v.75m1.5 0v.75m-1.5-1.5v.75M9.75 3v.75m-1.5-1.5v.75m1.5 0v.75m-1.5-1.5v.75M12 21v-8.25a4.5 4.5 0 014.5-4.5h.75a4.5 4.5 0 014.5 4.5V21M3 16.5V21" /></svg>`,
             'no-junk-food': `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full text-orange-400"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 12.75a9.75 9.75 0 01-9.75 9.75A9.75 9.75 0 012.25 12.75" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6H6a6 6 0 006 6z" /></svg>`,
-            'no-phone': `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full text-sky-400"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.5 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" /></svg>`,
+            'no-phone': `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full text-sky-400"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" /></svg>`,
             'no-alcohol': `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full text-lime-400"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 7.5l.415-.415a.75.75 0 011.06 0l.415.415a.75.75 0 010 1.06l-.415.415a.75.75 0 01-1.06 0L8.25 8.56a.75.75 0 010-1.06zM15.75 7.5l.415-.415a.75.75 0 011.06 0l.415.415a.75.75 0 010 1.06l-.415.415a.75.75 0 01-1.06 0l-.415-.415a.75.75 0 010-1.06z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 21l-3-3m0 0l3-3m-3 3h12" /></svg>`,
             'target': `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full text-green-400"><path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.82m5.84-2.56a14.953 14.953 0 00-2.582-7.78m-5.84 2.56a14.953 14.953 0 01-2.582-7.78m0 0a14.953 14.953 0 01-2.582 7.78m-2.32 0a14.953 14.953 0 012.582 7.78" /></svg>`,
         };
         const STAR_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 text-yellow-400"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clip-rule="evenodd" /></svg>`;
         const MEDAL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-10 h-10 text-amber-500"><path fill-rule="evenodd" d="M12.963 2.286a.75.75 0 00-1.071 0 11.948 11.948 0 00-5.225 4.254.75.75 0 00.978 1.135 10.45 10.45 0 014.298-3.64.75.75 0 00.978-1.135 11.948 11.948 0 00-5.225-4.254zM10.16 11.16A1.5 1.5 0 0112 9.66a1.5 1.5 0 011.84 1.5.75.75 0 001.428-.432 3 3 0 00-5.136-1.026.75.75 0 001.428.432z" clip-rule="evenodd" /><path d="M12 21a9 9 0 100-18 9 9 0 000 18zm0 2.25a11.25 11.25 0 100-22.5 11.25 11.25 0 000 22.5z" /></svg>`;
+        const RESTART_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 text-red-500"><path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm-1.72 6.97a.75.75 0 10-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 101.06 1.06L12 13.06l1.72 1.72a.75.75 0 101.06-1.06L13.06 12l1.72-1.72a.75.75 0 10-1.06-1.06L12 10.94l-1.72-1.72z" clip-rule="evenodd" /></svg>`;
 
         // DOM Elementleri
-        const views = { list: document.getElementById('habits-list-view'), add: document.getElementById('add-habit-view'), tracker: document.getElementById('tracker-view') };
-        const { habitsList, habitInput, addNewHabitBtn, saveHabitBtn, backToListBtn, backFromTrackerBtn, deleteHabitBtn, habitDisplay, startDateDisplay, daysEl, hoursEl, minutesEl, secondsEl, chainContainer, deleteModal, confirmDeleteBtn, cancelDeleteBtn, iconSelection, habitIconDisplay, awardsContainer } = Object.fromEntries(Object.entries({ habitsList: null, habitInput: null, addNewHabitBtn: null, saveHabitBtn: null, backToListBtn: null, backFromTrackerBtn: null, deleteHabitBtn: null, habitDisplay: null, startDateDisplay: null, daysEl: null, hoursEl: null, minutesEl: null, secondsEl: null, chainContainer: null, deleteModal: null, confirmDeleteBtn: null, cancelDeleteBtn: null, iconSelection: null, habitIconDisplay: null, awardsContainer: null }).map(([key]) => [key, document.getElementById(key.replace(/([A-Z])/g, "-$1").toLowerCase())]));
+        const views = { auth: document.getElementById('auth-view'), list: document.getElementById('habits-list-view'), add: document.getElementById('add-habit-view'), tracker: document.getElementById('tracker-view') };
+        const { habitsList, habitInput, addNewHabitBtn, saveHabitBtn, backToListBtn, backFromTrackerBtn, deleteHabitBtn, habitDisplay, startDateDisplay, daysEl, hoursEl, minutesEl, secondsEl, chainContainer, deleteModal, confirmDeleteBtn, cancelDeleteBtn, iconSelection, habitIconDisplay, awardsContainer, loginForm, registerForm, authError, showRegisterBtn, showLoginBtn, logoutBtn, userEmailDisplay, restartHabitBtn, restartModal, cancelRestartBtn, confirmRestartBtn, restartsContainer } = Object.fromEntries(Object.entries({ habitsList: null, habitInput: null, addNewHabitBtn: null, saveHabitBtn: null, backToListBtn: null, backFromTrackerBtn: null, deleteHabitBtn: null, habitDisplay: null, startDateDisplay: null, daysEl: null, hoursEl: null, minutesEl: null, secondsEl: null, chainContainer: null, deleteModal: null, confirmDeleteBtn: null, cancelDeleteBtn: null, iconSelection: null, habitIconDisplay: null, awardsContainer: null, loginForm: null, registerForm: null, authError: null, showRegisterBtn: null, showLoginBtn: null, logoutBtn: null, userEmailDisplay: null, restartHabitBtn: null, restartModal: null, cancelRestartBtn: null, confirmRestartBtn: null, restartsContainer: null }).map(([key]) => [key, document.getElementById(key.replace(/([A-Z])/g, "-$1").toLowerCase())]));
 
         // Durum (State) Değişkenleri
-        let timerInterval = null, db, auth, userId, allHabits = [], selectedHabitId = null, selectedIconId = null;
+        let timerInterval = null, db, auth, userId, allHabits = [], selectedHabitId = null, selectedIconId = null, unsubscribe;
+        
+        // --- Firebase Kurulumu ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyD0MQSEv71JY2PFYXfvGwsdZkzYh_X2dgM",
+          authDomain: "bidayet-49a96.firebaseapp.com",
+          projectId: "bidayet-49a96",
+          storageBucket: "bidayet-49a96.appspot.com",
+          messagingSenderId: "654829403515",
+          appId: "1:654829403515:web:d7b7d86e15ed04358b91de",
+          measurementId: "G-M9F2CJDWZM"
+        };
+
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+        } catch(e) {
+            console.error("Firebase başlatılamadı. Lütfen firebaseConfig nesnesini doğru girdiğinizden emin olun.", e);
+            document.getElementById('app-container').innerHTML = `<p class="text-red-400 text-center">Firebase yapılandırması eksik veya hatalı.</p>`;
+        }
+
 
         // --- Navigasyon ve UI ---
         function showView(viewName) {
-            Object.values(views).forEach(v => v.classList.add('hidden'));
-            if(views[viewName]) views[viewName].classList.remove('hidden');
+            Object.values(views).forEach(v => { v.style.display = 'none'; });
+            if(views[viewName]) views[viewName].style.display = 'block';
         }
         function showDeleteModal() { deleteModal.classList.remove('hidden', 'modal-leave'); deleteModal.classList.add('modal-enter'); }
         function hideDeleteModal() { deleteModal.classList.remove('modal-enter'); deleteModal.classList.add('modal-leave'); setTimeout(() => deleteModal.classList.add('hidden'), 200); }
+        function showRestartModal() { restartModal.classList.remove('hidden', 'modal-leave'); restartModal.classList.add('modal-enter'); }
+        function hideRestartModal() { restartModal.classList.remove('modal-enter'); restartModal.classList.add('modal-leave'); setTimeout(() => restartModal.classList.add('hidden'), 200); }
         function populateIcons() {
             iconSelection.innerHTML = Object.entries(ICONS).map(([id, svg]) => `<button class="icon-selection-item w-12 h-12 p-2 rounded-lg bg-slate-700 hover:bg-slate-600" data-icon-id="${id}">${svg}</button>`).join('');
             document.querySelectorAll('.icon-selection-item').forEach(btn => btn.addEventListener('click', () => {
@@ -147,48 +224,118 @@
             }));
         }
 
-        // --- Firebase ---
-        async function setupFirebase() {
-            try {
-                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-habit-app';
-                const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                onAuthStateChanged(auth, user => { if(user){ userId = user.uid; listenToHabits(userId, appId); }});
-                await (initialAuthToken ? signInWithCustomToken(auth, initialAuthToken) : signInAnonymously(auth));
-            } catch (error) { console.error("Firebase kurulum hatası:", error); }
-        }
-        function listenToHabits(currentUserId, appId) {
-            const habitsCollectionRef = collection(db, 'artifacts', appId, 'users', currentUserId, 'habits');
-            onSnapshot(habitsCollectionRef, (snapshot) => {
+        // --- Firebase İşlemleri ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                userId = user.uid;
+                userEmailDisplay.textContent = user.email;
+                listenToHabits(userId);
+                showView('list');
+            } else {
+                userId = null;
+                if(unsubscribe) unsubscribe();
+                stopTracking();
+                habitsList.innerHTML = '';
+                allHabits = [];
+                showView('auth');
+            }
+        });
+
+        function listenToHabits(currentUserId) {
+            if (!currentUserId) return;
+            const habitsCollectionRef = collection(db, 'users', currentUserId, 'habits');
+            unsubscribe = onSnapshot(habitsCollectionRef, (snapshot) => {
                 allHabits = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 allHabits.sort((a, b) => b.startTime.toDate() - a.startTime.toDate());
                 renderHabitList();
-                if (selectedHabitId && !allHabits.find(h => h.id === selectedHabitId)) stopTracking();
-            }, (error) => console.error("Veri dinleme hatası:", error));
+
+                if (selectedHabitId) {
+                    const currentlyTrackedHabit = allHabits.find(h => h.id === selectedHabitId);
+                    if (currentlyTrackedHabit && views.tracker.style.display === 'block') {
+                        startTracking(currentlyTrackedHabit);
+                    } else if (!currentlyTrackedHabit) {
+                        stopTracking();
+                    }
+                }
+            }, (error) => {
+                console.error("Veri dinleme hatası:", error);
+                if (error.code === 'permission-denied') {
+                    habitsList.innerHTML = `<div class="text-center p-4 bg-red-900 border border-red-700 rounded-lg"><p class="font-bold text-red-300">Erişim Hatası!</p><p class="text-sm text-red-400 mt-2">Veritabanı okuma izniniz yok. Lütfen Firebase projenizin Firestore Güvenlik Kurallarını kontrol edin.</p></div>`;
+                }
+            });
         }
+
         async function saveHabit(habitName, iconId, startTime) {
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-habit-app';
-            const habitsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'habits');
-            await addDoc(habitsCollectionRef, { habitName, iconId, startTime });
+            if (!userId) return;
+            const habitsCollectionRef = collection(db, 'users', userId, 'habits');
+            await addDoc(habitsCollectionRef, { 
+                habitName, 
+                iconId, 
+                startTime, 
+                restartCount: 0,
+                restartHistory: [] 
+            });
         }
         async function deleteHabit(habitId) {
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-habit-app';
-            const habitDocRef = doc(db, 'artifacts', appId, 'users', userId, 'habits', habitId);
+             if (!userId || !habitId) return;
+            const habitDocRef = doc(db, 'users', userId, 'habits', habitId);
             await deleteDoc(habitDocRef);
+        }
+        async function restartHabit(habitId) {
+            if (!userId || !habitId) return;
+            const habitDocRef = doc(db, 'users', userId, 'habits', habitId);
+            
+            const habitToRestart = allHabits.find(h => h.id === habitId);
+            if (!habitToRestart) {
+                console.error("Yeniden başlatılacak alışkanlık bulunamadı.");
+                return;
+            }
+
+            const oldStartTime = habitToRestart.startTime.toDate();
+            const durationDays = Math.floor((new Date() - oldStartTime) / 86400000);
+
+            const newHistoryEntry = {
+                durationDays: durationDays,
+                restartedAt: new Date()
+            };
+
+            await updateDoc(habitDocRef, {
+                startTime: new Date(),
+                restartCount: increment(1),
+                restartHistory: arrayUnion(newHistoryEntry)
+            });
         }
 
         // --- Render Fonksiyonları ---
         function renderHabitList() {
             habitsList.innerHTML = allHabits.length === 0 ? `<p class="text-center text-slate-500 py-4">Henüz bir alışkanlık eklemedin.</p>` : allHabits.map(habit => {
                 const days = Math.floor((new Date() - habit.startTime.toDate()) / 86400000);
+                
+                const numStars = Math.floor(days / 10);
+                const hasMedal = days >= 40;
+                let awardsHTML = '';
+                
+                if (hasMedal) {
+                    awardsHTML += `<div title="40 Günlük Başarı Madalyası!">${MEDAL_SVG.replace('w-10 h-10', 'w-6 h-6')}</div>`;
+                }
+                
+                const maxStarsToShow = 5;
+                for (let i = 0; i < Math.min(numStars, maxStarsToShow); i++) {
+                    awardsHTML += `<div title="${(i + 1) * 10} Günlük Başarı">${STAR_SVG.replace('w-8 h-8', 'w-5 h-5')}</div>`;
+                }
+
+                if (numStars > maxStarsToShow) {
+                    awardsHTML += `<span class="text-xs font-bold text-yellow-500">+${numStars - maxStarsToShow}</span>`;
+                }
+
                 return `<button class="w-full text-left p-4 bg-slate-700 border border-slate-600 rounded-lg hover:bg-slate-600 hover:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all flex items-center gap-4" data-habit-id="${habit.id}">
                     <div class="w-10 h-10 flex-shrink-0">${ICONS[habit.iconId] || ICONS['target']}</div>
-                    <div>
-                        <p class="font-bold text-white">${habit.habitName}</p>
+                    <div class="flex-grow">
+                        <p class="font-bold text-white truncate">${habit.habitName}</p>
                         <p class="text-sm text-purple-400 font-semibold">${days} gündür devam ediyor</p>
+                        <div class="flex items-center gap-1 mt-2 min-h-[24px]">
+                            ${awardsHTML}
+                        </div>
                     </div>
                 </button>`;
             }).join('');
@@ -200,6 +347,7 @@
                 }
             }));
         }
+
         function renderChain(days) {
             chainContainer.innerHTML = days < 1 ? `<p class="text-sm text-slate-500">İlk gününü tamamladığında zincirin başlayacak.</p>` : Array.from({length: days}, (_, i) => `<div class="chain-link w-10 h-10 flex items-center justify-center bg-green-900 text-green-300 font-bold rounded-full border-2 border-green-700" style="animation-delay: ${i * 0.05}s">${i + 1}</div>`).join('');
         }
@@ -211,6 +359,21 @@
             for (let i = 0; i < numStars; i++) awardsHTML += `<div class="award-item" style="animation-delay:${(i * 0.1) + 0.1}s" title="${(i+1)*10} Günlük Başarı">${STAR_SVG}</div>`;
             awardsContainer.innerHTML = awardsHTML || `<p class="text-sm text-slate-500">Her 10 günde bir yıldız kazan!</p>`;
         }
+        function renderRestarts(history) {
+            const restartHistory = history || [];
+            if (restartHistory.length === 0) {
+                restartsContainer.innerHTML = `<p class="text-sm text-slate-500">Hiç başa dönmedin. Harika gidiyorsun!</p>`;
+                return;
+            }
+            restartHistory.sort((a, b) => a.restartedAt.toDate() - b.restartedAt.toDate());
+
+            restartsContainer.innerHTML = restartHistory.map((restart) => {
+                const restartDate = restart.restartedAt.toDate();
+                const titleText = `${restart.durationDays} günlük serinin ardından ${restartDate.toLocaleDateString('tr-TR')} tarihinde yeniden başlandı.`;
+                return `<div class="restart-item award-item" title="${titleText}">${RESTART_SVG}</div>`;
+            }).join('');
+        }
+
 
         // --- Uygulama Mantığı ---
         function updateTimer(startTime) {
@@ -231,6 +394,10 @@
             habitDisplay.innerText = habit.habitName;
             const startTime = habit.startTime.toDate();
             startDateDisplay.innerText = `Başlangıç: ${startTime.toLocaleString('tr-TR')}`;
+            
+            const restartHistory = habit.restartHistory || [];
+            renderRestarts(restartHistory);
+
             clearInterval(timerInterval);
             updateTimer(startTime);
             timerInterval = setInterval(() => updateTimer(startTime), 1000);
@@ -239,11 +406,41 @@
         function stopTracking() {
             clearInterval(timerInterval);
             selectedHabitId = null;
-            habitInput.value = '';
+            if(habitInput) habitInput.value = '';
             showView('list');
         }
-
+        
         // --- Olay Dinleyicileri ---
+        // Auth
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                authError.textContent = '';
+            } catch (error) {
+                authError.textContent = 'E-posta veya şifre hatalı.';
+                console.error("Giriş hatası:", error);
+            }
+        });
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            try {
+                await createUserWithEmailAndPassword(auth, email, password);
+                authError.textContent = '';
+            } catch (error) {
+                 authError.textContent = 'Kayıt başarısız. Lütfen tekrar deneyin.';
+                console.error("Kayıt hatası:", error);
+            }
+        });
+        logoutBtn.addEventListener('click', () => signOut(auth));
+        showRegisterBtn.addEventListener('click', () => { loginForm.classList.add('hidden'); registerForm.classList.remove('hidden'); authError.textContent = ''; });
+        showLoginBtn.addEventListener('click', () => { registerForm.classList.add('hidden'); loginForm.classList.remove('hidden'); authError.textContent = ''; });
+
+        // App
         addNewHabitBtn.addEventListener('click', () => { selectedIconId = 'target'; populateIcons(); document.querySelector('[data-icon-id="target"]').classList.add('selected'); showView('add'); });
         backToListBtn.addEventListener('click', () => showView('list'));
         backFromTrackerBtn.addEventListener('click', stopTracking);
@@ -259,11 +456,16 @@
         cancelDeleteBtn.addEventListener('click', hideDeleteModal);
         confirmDeleteBtn.addEventListener('click', () => { if (selectedHabitId) { deleteHabit(selectedHabitId); hideDeleteModal(); } });
 
-        // --- Başlatma ---
-        setupFirebase();
-        showView('list');
+        restartHabitBtn.addEventListener('click', () => { if (selectedHabitId) showRestartModal(); });
+        cancelRestartBtn.addEventListener('click', hideRestartModal);
+        confirmRestartBtn.addEventListener('click', () => { 
+            if (selectedHabitId) {
+                restartHabit(selectedHabitId);
+                hideRestartModal();
+            }
+        });
+
     </script>
 </body>
 </html>
-
 
