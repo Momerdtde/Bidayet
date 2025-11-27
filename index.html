@@ -128,6 +128,7 @@
                     <button id="edit-habit-name-btn" class="text-slate-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
                 </div>
                 <p id="start-date-display" class="text-xs text-slate-400 mt-1"></p>
+                <div id="quit-record-display" class="mt-2 text-sm text-yellow-500 font-semibold flex items-center gap-1"></div>
             </div>
             <div class="grid grid-cols-4 gap-2 sm:gap-4 text-center my-6">
                 <div class="timer-box p-3 rounded-lg"><div id="days-el" class="text-3xl sm:text-4xl font-black text-white">00</div><div class="text-xs text-slate-400">GÜN</div></div>
@@ -156,6 +157,7 @@
                      <button id="edit-build-habit-name-btn" class="text-slate-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
                 </div>
                 <p id="build-streak-display" class="text-lg text-green-400 font-bold mt-2"></p>
+                <div id="build-record-display" class="mt-1 text-sm text-yellow-500 font-semibold flex items-center gap-1"></div>
             </div>
             <div id="build-awards-container" class="flex items-center justify-center gap-2 mt-4 min-h-[48px] p-2 bg-slate-900 rounded-lg"></div>
             <h3 class="font-bold text-center my-4 text-slate-400">Başarı Takvimi</h3>
@@ -227,6 +229,7 @@
         const STAR_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 text-yellow-400"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clip-rule="evenodd" /></svg>`;
         const MEDAL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-10 h-10 text-amber-500"><path fill-rule="evenodd" d="M12.963 2.286a.75.75 0 00-1.071 0 11.948 11.948 0 00-5.225 4.254.75.75 0 00.978 1.135 10.45 10.45 0 014.298-3.64.75.75 0 00.978-1.135 11.948 11.948 0 00-5.225-4.254zM10.16 11.16A1.5 1.5 0 0112 9.66a1.5 1.5 0 011.84 1.5.75.75 0 001.428-.432 3 3 0 00-5.136-1.026.75.75 0 001.428.432z" clip-rule="evenodd" /><path d="M12 21a9 9 0 100-18 9 9 0 000 18zm0 2.25a11.25 11.25 0 100-22.5 11.25 11.25 0 000 22.5z" /></svg>`;
         const RESTART_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 text-red-500"><path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm-1.72 6.97a.75.75 0 10-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 101.06 1.06L12 13.06l1.72 1.72a.75.75 0 101.06-1.06L13.06 12l1.72-1.72a.75.75 0 10-1.06-1.06L12 10.94l-1.72-1.72z" clip-rule="evenodd" /></svg>`;
+        const TROPHY_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-yellow-500"><path fill-rule="evenodd" d="M5.166 2.621v.858c-1.035.148-2.059.33-3.071.543a.75.75 0 00-.584.859 6.753 6.753 0 006.138 5.6 6.73 6.73 0 002.743 1.346A6.707 6.707 0 019.279 15H8.54c-1.036 0-1.875.84-1.875 1.875V19.5h-.75a2.25 2.25 0 00-2.25 2.25c0 .414.336.75.75.75h15a.75.75 0 00.75-.75 2.25 2.25 0 00-2.25-2.25h-.75v-2.625c0-1.036-.84-1.875-1.875-1.875h-.739a6.706 6.706 0 01-1.112-3.173 6.73 6.73 0 002.743-1.347 6.753 6.753 0 006.139-5.6.75.75 0 00-.585-.858 47.077 47.077 0 00-3.07-.543V2.62a.75.75 0 00-.658-.744 49.22 49.22 0 00-6.093-.377c-2.063 0-4.096.128-6.093.377a.75.75 0 00-.657.744zm0 2.629c0 1.196.312 2.32.857 3.294A5.266 5.266 0 013.16 5.337a45.6 45.6 0 012.006-.343v.256zm13.5 0v-.256c.674.1 1.343.214 2.006.343a5.265 5.265 0 01-3.865 3.214 6.75 6.75 0 00.857-3.294z" clip-rule="evenodd" /></svg>`;
 
         const dom = {
             views: { auth: document.getElementById('auth-view'), list: document.getElementById('habits-list-view'), add: document.getElementById('add-habit-view'), tracker: document.getElementById('tracker-view'), buildTracker: document.getElementById('build-tracker-view') },
@@ -240,6 +243,7 @@
             deleteHabitBtn: document.getElementById('delete-habit-btn'),
             habitDisplay: document.getElementById('habit-display'),
             startDateDisplay: document.getElementById('start-date-display'),
+            quitRecordDisplay: document.getElementById('quit-record-display'),
             daysEl: document.getElementById('days-el'),
             hoursEl: document.getElementById('hours-el'),
             minutesEl: document.getElementById('minutes-el'),
@@ -276,6 +280,7 @@
             buildHabitIconDisplay: document.getElementById('build-habit-icon-display'),
             buildHabitDisplay: document.getElementById('build-habit-display'),
             buildStreakDisplay: document.getElementById('build-streak-display'),
+            buildRecordDisplay: document.getElementById('build-record-display'),
             buildAwardsContainer: document.getElementById('build-awards-container'),
             chainCalendarGrid: document.getElementById('chain-calendar-grid'),
             editBuildHabitNameBtn: document.getElementById('edit-build-habit-name-btn'),
@@ -305,6 +310,12 @@
             console.error("Firebase başlatılamadı.", e);
             document.getElementById('app-container').innerHTML = `<p class="text-red-400 text-center">Firebase yapılandırması eksik veya hatalı.</p>`;
         }
+
+        const getLocalDate = () => {
+            const d = new Date();
+            const offset = d.getTimezoneOffset() * 60000;
+            return new Date(d.getTime() - offset).toISOString().split('T')[0];
+        };
 
         // --- Navigasyon ve UI ---
         function showView(viewName) {
@@ -378,7 +389,7 @@
             
             let newHabitData;
             if (type === 'quit') {
-                newHabitData = { habitName, iconId, type, startTime: new Date(), restartCount: 0, restartHistory: [] };
+                newHabitData = { habitName, iconId, type, startTime: new Date(), restartCount: 0, restartHistory: [], longestStreak: 0 };
             } else {
                 newHabitData = { habitName, iconId, type, createdAt: new Date(), completedDates: [] };
             }
@@ -400,11 +411,15 @@
             const oldStartTime = habitToRestart.startTime.toDate();
             const durationDays = Math.floor((new Date() - oldStartTime) / 86400000);
             const newHistoryEntry = { durationDays: durationDays, restartedAt: new Date() };
+            
+            const currentLongest = habitToRestart.longestStreak || 0;
+            const newLongest = Math.max(currentLongest, durationDays);
 
             await updateDoc(habitDocRef, {
                 startTime: new Date(),
                 restartCount: increment(1),
-                restartHistory: arrayUnion(newHistoryEntry)
+                restartHistory: arrayUnion(newHistoryEntry),
+                longestStreak: newLongest
             });
         }
         async function updateHabitName(habitId, newName) {
@@ -418,7 +433,7 @@
             const habit = allHabits.find(h => h.id === habitId);
             if (!habit) return;
 
-            const todayStr = new Date().toISOString().split('T')[0];
+            const todayStr = getLocalDate();
             const completedDates = habit.completedDates || [];
             const isCompletedToday = completedDates.includes(todayStr);
 
@@ -433,10 +448,33 @@
         
         async function confirmUncheck() {
             if (!userId || !selectedHabitId) return;
-            const todayStr = new Date().toISOString().split('T')[0];
+            const todayStr = getLocalDate();
             const habitDocRef = doc(db, 'users', userId, 'habits', selectedHabitId);
             await updateDoc(habitDocRef, { completedDates: arrayRemove(todayStr) });
             hideModal(dom.uncheckModal);
+        }
+        
+        function calculateMaxStreak(dates = []) {
+            if (!dates || dates.length === 0) return 0;
+            const sortedDates = dates.map(d => new Date(d)).sort((a, b) => a - b);
+            
+            let maxStreak = 1;
+            let currentStreak = 1;
+            
+            for (let i = 1; i < sortedDates.length; i++) {
+                const prev = sortedDates[i-1];
+                const curr = sortedDates[i];
+                const diffTime = Math.abs(curr - prev);
+                const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)); 
+                
+                if (diffDays === 1) {
+                    currentStreak++;
+                } else if (diffDays > 1) {
+                    currentStreak = 1;
+                }
+                maxStreak = Math.max(maxStreak, currentStreak);
+            }
+            return maxStreak;
         }
 
         // --- Render Fonksiyonları ---
@@ -445,6 +483,8 @@
                 const days = Math.floor((new Date() - habit.startTime.toDate()) / 86400000);
                 const numStars = Math.floor(days / 10);
                 const hasMedal = days >= 40;
+                const record = Math.max(habit.longestStreak || 0, days);
+                
                 let awardsHTML = '';
                 if (hasMedal) awardsHTML += `<div title="40 Günlük Başarı Madalyası!">${MEDAL_SVG.replace('w-10 h-10', 'w-6 h-6')}</div>`;
                 const maxStarsToShow = 5;
@@ -458,7 +498,10 @@
                     <div class="flex-grow">
                         <p class="font-bold text-white truncate">${habit.habitName}</p>
                         <p class="text-sm text-purple-400 font-semibold">${days} gündür devam ediyor</p>
-                        <div class="flex items-center gap-1 mt-2 min-h-[24px]">${awardsHTML}</div>
+                        <div class="flex justify-between items-center mt-2">
+                             <div class="flex items-center gap-1 min-h-[24px]">${awardsHTML}</div>
+                             <div class="text-xs text-yellow-500 font-bold flex items-center gap-1" title="En uzun süre">${TROPHY_SVG} Rekor: ${record} gün</div>
+                        </div>
                     </div>
                 </button>`;
             }).join('');
@@ -472,7 +515,8 @@
             dom.buildingHabitsList.innerHTML = buildHabits.length === 0 ? `<p class="text-center text-slate-500 py-4">Henüz bir zincir başlatmadın.</p>` : buildHabits.map(habit => {
                 const completedDates = habit.completedDates || [];
                 const streak = calculateStreak(completedDates);
-                const isCompletedToday = completedDates.includes(new Date().toISOString().split('T')[0]);
+                const maxStreak = calculateMaxStreak(completedDates);
+                const isCompletedToday = completedDates.includes(getLocalDate());
 
                 const numStars = Math.floor(streak / 10);
                 const hasMedal = streak >= 40;
@@ -490,8 +534,11 @@
                         <div class="w-10 h-10 flex-shrink-0">${ICONS[habit.iconId] || ICONS['target']}</div>
                         <div class="flex-grow">
                             <p class="font-bold text-white truncate">${habit.habitName}</p>
-                            <p class="text-sm font-semibold ${streak > 0 ? 'text-green-400' : 'text-slate-400'}">${streak} günlük zincir</p>
-                             <div class="flex items-center gap-1 mt-2 min-h-[24px]">${awardsHTML}</div>
+                            <div class="flex justify-between items-center">
+                                <p class="text-sm font-semibold ${streak > 0 ? 'text-green-400' : 'text-slate-400'}">${streak} günlük zincir</p>
+                                <div class="text-xs text-yellow-500 font-bold flex items-center gap-1 mr-2" title="En uzun zincir">${TROPHY_SVG} Rekor: ${maxStreak}</div>
+                            </div>
+                             <div class="flex items-center gap-1 mt-1 min-h-[24px]">${awardsHTML}</div>
                         </div>
                     </button>
                     <button class="toggle-completion-btn flex-shrink-0 font-bold py-2 px-4 rounded-lg text-sm ${isCompletedToday ? 'bg-green-600 text-white' : 'bg-slate-600 text-slate-200 hover:bg-slate-500'}" data-habit-id="${habit.id}">${isCompletedToday ? '✔' : 'Tik At'}</button>
@@ -564,9 +611,13 @@
             for (let i = 0; i < 42; i++) {
                 const currentDate = new Date(startDate);
                 currentDate.setDate(startDate.getDate() + i);
-                const dateStr = currentDate.toISOString().split('T')[0];
+                
+                // Fix: Construct local date manually to match stored format
+                const offset = currentDate.getTimezoneOffset() * 60000;
+                const dateStr = new Date(currentDate.getTime() - offset).toISOString().split('T')[0];
+                
                 const isCompleted = completedDates.includes(dateStr);
-                const isToday = dateStr === today.toISOString().split('T')[0];
+                const isToday = dateStr === getLocalDate();
                 
                 grid.push(`<div class="calendar-day h-9 flex items-center justify-center rounded-full border-2 border-slate-700 ${isCompleted ? 'completed' : ''} ${isToday ? 'today' : ''}">${currentDate.getDate()}</div>`);
             }
@@ -578,21 +629,26 @@
             if (!dates || dates.length === 0) return 0;
             const dateSet = new Set(dates);
             let streak = 0;
-            const today = new Date();
-            today.setHours(12, 0, 0, 0); 
+            const todayStr = getLocalDate();
             
-            let currentDate = new Date(today);
+            let currentDate = new Date();
             
-            if (!dateSet.has(currentDate.toISOString().split('T')[0])) {
+            // Check if today is missed, then check yesterday
+            const offset = currentDate.getTimezoneOffset() * 60000;
+            let currentStr = new Date(currentDate.getTime() - offset).toISOString().split('T')[0];
+
+            if (!dateSet.has(currentStr)) {
                  currentDate.setDate(currentDate.getDate() - 1);
-                 if (!dateSet.has(currentDate.toISOString().split('T')[0])) {
+                 currentStr = new Date(currentDate.getTime() - offset).toISOString().split('T')[0];
+                 if (!dateSet.has(currentStr)) {
                      return 0;
                  }
             }
             
-            while (dateSet.has(currentDate.toISOString().split('T')[0])) {
+            while (dateSet.has(currentStr)) {
                 streak++;
                 currentDate.setDate(currentDate.getDate() - 1);
+                currentStr = new Date(currentDate.getTime() - offset).toISOString().split('T')[0];
             }
             
             return streak;
@@ -618,6 +674,11 @@
             dom.habitDisplay.innerText = habit.habitName;
             const startTime = habit.startTime.toDate();
             dom.startDateDisplay.innerText = `Başlangıç: ${startTime.toLocaleString('tr-TR')}`;
+            
+            const currentDuration = Math.floor((new Date() - startTime) / 86400000);
+            const record = Math.max(habit.longestStreak || 0, currentDuration);
+            dom.quitRecordDisplay.innerHTML = `${TROPHY_SVG} Rekor: ${record} gün`;
+
             renderRestarts(habit.restartHistory);
             clearInterval(timerInterval);
             updateTimer(startTime);
@@ -631,7 +692,11 @@
             dom.buildHabitDisplay.innerText = habit.habitName;
             const completedDates = habit.completedDates || [];
             const streak = calculateStreak(completedDates);
+            const maxStreak = calculateMaxStreak(completedDates);
+            
             dom.buildStreakDisplay.innerText = `${streak} günlük zincir`;
+            dom.buildRecordDisplay.innerHTML = `${TROPHY_SVG} Rekor: ${maxStreak} gün`;
+            
             renderBuildAwards(streak);
             renderChainCalendar(completedDates);
             showView('buildTracker');
@@ -682,4 +747,3 @@
     </script>
 </body>
 </html>
-
