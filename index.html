@@ -9,43 +9,21 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        .timer-box {
-            background-color: #1e293b; /* slate-800 */
-            border: 1px solid #334155; /* slate-700 */
-        }
-        .icon-selection-item.selected {
-            outline: 2px solid #a855f7; /* purple-500 */
-            background-color: #334155;
-        }
+        body { font-family: 'Inter', sans-serif; }
+        .timer-box { background-color: #1e293b; border: 1px solid #334155; }
+        .icon-selection-item.selected { outline: 2px solid #a855f7; background-color: #334155; }
+        .day-selection-item { transition: all 0.2s; }
+        .day-selection-item.selected { background-color: #a855f7; color: white; border-color: #a855f7; }
         .award-item { animation: pop-in 0.5s ease-out forwards; }
-        @keyframes pop-in {
-            0% { transform: scale(0.5); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
+        @keyframes pop-in { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         .modal-enter { animation: modal-fade-in 0.2s ease-out forwards; }
         .modal-leave { animation: modal-fade-in 0.2s ease-out reverse forwards; }
-        @keyframes modal-fade-in {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        .tab-btn.active {
-            border-bottom-color: #a855f7; /* purple-500 */
-            color: #f1f5f9; /* slate-100 */
-        }
-        /* Hide views by default */
-        #habits-list-view, #add-habit-view, #tracker-view, #build-tracker-view, #auth-view {
-            display: none;
-        }
-        .calendar-day.completed {
-             background-color: #166534; /* green-800 */
-             border-color: #22c55e; /* green-500 */
-        }
-         .calendar-day.today {
-            outline: 2px solid #a855f7; /* purple-500 */
-        }
+        @keyframes modal-fade-in { from { opacity: 0; } to { opacity: 1; } }
+        .tab-btn.active { border-bottom-color: #a855f7; color: #f1f5f9; }
+        #habits-list-view, #add-habit-view, #tracker-view, #build-tracker-view, #auth-view { display: none; }
+        .calendar-day.completed { background-color: #166534; border-color: #22c55e; }
+        .calendar-day.today { outline: 2px solid #a855f7; }
+        .calendar-day.not-required { opacity: 0.3; } /* Belirlenmeyen günler soluk görünür */
     </style>
 </head>
 <body class="bg-slate-900 text-slate-300 flex items-center justify-center min-h-screen p-4">
@@ -101,16 +79,38 @@
             <div class="space-y-4">
                  <fieldset class="mb-2">
                     <legend class="sr-only">Alışkanlık Tipi</legend>
-                    <div class="flex justify-center gap-4">
-                        <div>
-                            <input type="radio" name="habit-type" value="quit" id="type-quit" class="peer hidden" checked><label for="type-quit" class="block cursor-pointer rounded-lg border border-slate-600 bg-slate-700 py-2 px-4 text-sm font-medium peer-checked:border-purple-500 peer-checked:ring-1 peer-checked:ring-purple-500">Bırakmak İstiyorum</label>
+                    <div class="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4">
+                        <div class="w-full sm:w-auto">
+                            <input type="radio" name="habit-type" value="quit" id="type-quit" class="peer hidden" checked>
+                            <label for="type-quit" class="block text-center cursor-pointer rounded-lg border border-slate-600 bg-slate-700 py-2 px-4 text-sm font-medium peer-checked:border-purple-500 peer-checked:ring-1 peer-checked:ring-purple-500">Bırakmak</label>
                         </div>
-                        <div>
-                            <input type="radio" name="habit-type" value="build" id="type-build" class="peer hidden"><label for="type-build" class="block cursor-pointer rounded-lg border border-slate-600 bg-slate-700 py-2 px-4 text-sm font-medium peer-checked:border-purple-500 peer-checked:ring-1 peer-checked:ring-purple-500">Yapmak İstiyorum</label>
+                        <div class="w-full sm:w-auto">
+                            <input type="radio" name="habit-type" value="build" id="type-build" class="peer hidden">
+                            <label for="type-build" class="block text-center cursor-pointer rounded-lg border border-slate-600 bg-slate-700 py-2 px-4 text-sm font-medium peer-checked:border-purple-500 peer-checked:ring-1 peer-checked:ring-purple-500">Her Gün</label>
+                        </div>
+                        <div class="w-full sm:w-auto">
+                            <input type="radio" name="habit-type" value="periodic" id="type-periodic" class="peer hidden">
+                            <label for="type-periodic" class="block text-center cursor-pointer rounded-lg border border-slate-600 bg-slate-700 py-2 px-4 text-sm font-medium peer-checked:border-purple-500 peer-checked:ring-1 peer-checked:ring-purple-500">Periyodik</label>
                         </div>
                     </div>
                 </fieldset>
-                <input type="text" id="habit-input" placeholder="Örn: Sigarayı bırakmak" class="w-full px-4 py-3 bg-slate-700 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors">
+
+                <!-- Gün Seçimi (Sadece Periyodik tipte görünür) -->
+                <div id="day-selection-container" class="hidden mb-4 p-4 bg-slate-900 rounded-lg border border-slate-700">
+                    <h3 class="text-sm font-bold text-slate-400 mb-3 text-center">Hangi Günler Yapılacak?</h3>
+                    <div class="flex justify-between gap-1">
+                        <!-- Gün id'leri: 1=Pzt, 2=Sal, ..., 0=Paz (JavaScript Date objesine uygun olarak, ancak pzt'den başlatacağız görselde) -->
+                        <button type="button" class="day-selection-item w-10 h-10 rounded-full border border-slate-600 bg-slate-700 flex items-center justify-center text-sm font-bold hover:bg-slate-600" data-day="1">Pz</button>
+                        <button type="button" class="day-selection-item w-10 h-10 rounded-full border border-slate-600 bg-slate-700 flex items-center justify-center text-sm font-bold hover:bg-slate-600" data-day="2">Sa</button>
+                        <button type="button" class="day-selection-item w-10 h-10 rounded-full border border-slate-600 bg-slate-700 flex items-center justify-center text-sm font-bold hover:bg-slate-600" data-day="3">Ça</button>
+                        <button type="button" class="day-selection-item w-10 h-10 rounded-full border border-slate-600 bg-slate-700 flex items-center justify-center text-sm font-bold hover:bg-slate-600" data-day="4">Pe</button>
+                        <button type="button" class="day-selection-item w-10 h-10 rounded-full border border-slate-600 bg-slate-700 flex items-center justify-center text-sm font-bold hover:bg-slate-600" data-day="5">Cu</button>
+                        <button type="button" class="day-selection-item w-10 h-10 rounded-full border border-slate-600 bg-slate-700 flex items-center justify-center text-sm font-bold hover:bg-slate-600" data-day="6">Ct</button>
+                        <button type="button" class="day-selection-item w-10 h-10 rounded-full border border-slate-600 bg-slate-700 flex items-center justify-center text-sm font-bold hover:bg-slate-600" data-day="0">Pz</button>
+                    </div>
+                </div>
+
+                <input type="text" id="habit-input" placeholder="Örn: Spora gitmek" class="w-full px-4 py-3 bg-slate-700 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors">
                 <h3 class="text-sm font-bold text-slate-400 pt-2 text-center">Bir Simge Seç</h3>
                 <div id="icon-selection" class="flex flex-wrap gap-3 justify-center pb-2"></div>
                 <button id="save-habit-btn" class="w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700">Kaydet ve Başla</button>
@@ -159,9 +159,12 @@
                 <p id="build-streak-display" class="text-lg text-green-400 font-bold mt-2"></p>
                 <div id="build-record-display" class="mt-1 text-sm text-yellow-500 font-semibold flex items-center gap-1"></div>
             </div>
-            <div id="build-awards-container" class="flex items-center justify-center gap-2 mt-4 min-h-[48px] p-2 bg-slate-900 rounded-lg"></div>
+            
+            <div id="build-awards-container" class="flex items-center justify-center gap-4 mt-6 min-h-[48px] p-3 bg-slate-900 rounded-lg"></div>
+            
             <h3 class="font-bold text-center my-4 text-slate-400">Başarı Takvimi</h3>
             <div id="chain-calendar-grid" class="grid grid-cols-7 gap-2 text-center text-xs p-4 bg-slate-900 rounded-lg border border-slate-700"></div>
+            
              <div class="grid grid-cols-1 gap-4 mt-6">
                 <button id="delete-build-habit-btn" class="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 transition-colors">Alışkanlığı Sil</button>
             </div>
@@ -169,7 +172,7 @@
     </div>
     
     <!-- Modals -->
-     <div id="delete-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4">
+     <div id="delete-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
         <div class="bg-slate-800 rounded-lg p-8 shadow-xl max-w-sm w-full text-center border border-slate-700">
             <h2 class="text-xl font-bold mb-4 text-white">Emin misin?</h2>
             <p class="text-slate-400 mb-6">Bu alışkanlık kalıcı olarak silinecek. Bu işlem geri alınamaz.</p>
@@ -179,7 +182,7 @@
             </div>
         </div>
     </div>
-     <div id="restart-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4">
+     <div id="restart-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
         <div class="bg-slate-800 rounded-lg p-8 shadow-xl max-w-sm w-full text-center border border-slate-700">
             <h2 class="text-xl font-bold mb-4 text-white">Yeniden Başlatılsın mı?</h2>
             <p class="text-slate-400 mb-6">Sayaç sıfırlanacak ve bu bir başa dönme olarak kaydedilecek. Emin misin?</p>
@@ -189,23 +192,27 @@
             </div>
         </div>
     </div>
-     <div id="edit-name-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4">
+     <div id="edit-name-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
         <div class="bg-slate-800 rounded-lg p-8 shadow-xl max-w-sm w-full border border-slate-700">
             <h2 class="text-xl font-bold mb-4 text-white">Alışkanlığı Düzenle</h2>
-            <input type="text" id="edit-habit-name-input" class="w-full px-4 py-3 bg-slate-700 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-purple-500 mb-6">
+            <input type="text" id="edit-habit-name-input" class="w-full px-4 py-3 bg-slate-700 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-purple-500 mb-4">
+            
+            <h3 class="text-sm font-bold text-slate-400 mb-2 text-center">Simgeyi Değiştir</h3>
+            <div id="edit-icon-selection" class="flex flex-wrap gap-2 justify-center mb-6 max-h-32 overflow-y-auto pb-2"></div>
+
             <div class="flex justify-center gap-4">
                 <button id="cancel-edit-name-btn" class="w-full bg-slate-600 text-slate-200 font-bold py-2 px-4 rounded-lg hover:bg-slate-500">İptal</button>
                 <button id="confirm-edit-name-btn" class="w-full bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-700">Kaydet</button>
             </div>
         </div>
     </div>
-     <div id="uncheck-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4">
+     <div id="uncheck-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
         <div class="bg-slate-800 rounded-lg p-8 shadow-xl max-w-sm w-full text-center border border-slate-700">
             <h2 class="text-xl font-bold mb-4 text-white">Zinciri Kırmak İstediğine Emin misin?</h2>
-            <p class="text-slate-400 mb-6">Bugünkü tiki kaldırmak, zincirini bozabilir.</p>
+            <p class="text-slate-400 mb-6">Bugünkü tiki kaldırmak, zincirini bozabilir veya rekorunu etkileyebilir.</p>
             <div class="flex justify-center gap-4">
                 <button id="cancel-uncheck-btn" class="w-full bg-slate-600 text-slate-200 font-bold py-2 px-4 rounded-lg hover:bg-slate-500">İptal</button>
-                <button id="confirm-uncheck-btn" class="w-full bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700">Onayla</button>
+                <button id="confirm-uncheck-btn" class="w-full bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700">Tiki Kaldır</button>
             </div>
         </div>
     </div>
@@ -215,6 +222,7 @@
         import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, collection, onSnapshot, addDoc, deleteDoc, updateDoc, increment, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // SVG Icons
         const ICONS = {
             'no-smoking': `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full text-red-400"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12.75l-7.5-7.5-7.5 7.5" transform="translate(0, -2)"/><path stroke-linecap="round" d="M19.5 12.75v-3.75c0-1.036-.84-1.875-1.875-1.875H6.375C5.339 7.125 4.5 7.964 4.5 9v3.75" /></svg>`,
             'no-coffee': `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full text-yellow-700"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 3v.75m-1.5-1.5v.75m1.5 0v.75m-1.5-1.5v.75M9.75 3v.75m-1.5-1.5v.75m1.5 0v.75m-1.5-1.5v.75M12 21v-8.25a4.5 4.5 0 014.5-4.5h.75a4.5 4.5 0 014.5 4.5V21M3 16.5V21" /></svg>`,
@@ -225,6 +233,13 @@
             'book': `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full text-blue-400"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>`,
             'water': `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full text-cyan-400"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm0 8.25-1.5 1.5-1.5-1.5" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 12.75v6.75" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12.75l-1.5 1.5-1.5-1.5" /></svg>`,
             'run': `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full text-green-400"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" /></svg>`,
+            'dumbbell': `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full text-indigo-400"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>`,
+            'jiujitsu': `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full text-rose-500"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1A3.75 3.75 0 0012 18z" /></svg>`,
+            'basketball': `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full text-orange-500"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18zm0-18v18M3 12h18M5.636 5.636a9 9 0 0112.728 12.728M5.636 18.364a9 9 0 0012.728-12.728" /></svg>`,
+            'tv': `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full text-slate-400"><path stroke-linecap="round" stroke-linejoin="round" d="M6 20.25h12m-7.5-3v3m3-3v3m-10.125-3h17.25c.621 0 1.125-.504 1.125-1.125V4.875c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125z" /></svg>`,
+            'film': `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full text-fuchsia-400"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" /></svg>`,
+            'eye': `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full text-teal-400"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`,
+            'mosque': `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full text-emerald-500"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v3m0 0a4.5 4.5 0 00-4.5 4.5v11.25h9V10.5A4.5 4.5 0 0012 6zm-7.5 7.5v9h3v-9h-3zm15 0v9h-3v-9h3z" /><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 21v-3.75a1.5 1.5 0 013 0V21" /></svg>`
         };
         const STAR_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 text-yellow-400"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clip-rule="evenodd" /></svg>`;
         const MEDAL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-10 h-10 text-amber-500"><path fill-rule="evenodd" d="M12.963 2.286a.75.75 0 00-1.071 0 11.948 11.948 0 00-5.225 4.254.75.75 0 00.978 1.135 10.45 10.45 0 014.298-3.64.75.75 0 00.978-1.135 11.948 11.948 0 00-5.225-4.254zM10.16 11.16A1.5 1.5 0 0112 9.66a1.5 1.5 0 011.84 1.5.75.75 0 001.428-.432 3 3 0 00-5.136-1.026.75.75 0 001.428.432z" clip-rule="evenodd" /><path d="M12 21a9 9 0 100-18 9 9 0 000 18zm0 2.25a11.25 11.25 0 100-22.5 11.25 11.25 0 000 22.5z" /></svg>`;
@@ -272,6 +287,7 @@
             editHabitNameInput: document.getElementById('edit-habit-name-input'),
             cancelEditNameBtn: document.getElementById('cancel-edit-name-btn'),
             confirmEditNameBtn: document.getElementById('confirm-edit-name-btn'),
+            editIconSelection: document.getElementById('edit-icon-selection'),
             tabQuit: document.getElementById('tab-quit'),
             tabBuild: document.getElementById('tab-build'),
             quitHabitsContainer: document.getElementById('quit-habits-container'),
@@ -288,9 +304,13 @@
             uncheckModal: document.getElementById('uncheck-modal'),
             cancelUncheckBtn: document.getElementById('cancel-uncheck-btn'),
             confirmUncheckBtn: document.getElementById('confirm-uncheck-btn'),
+            typeRadioButtons: document.querySelectorAll('input[name="habit-type"]'),
+            daySelectionContainer: document.getElementById('day-selection-container'),
+            daySelectionItems: document.querySelectorAll('.day-selection-item'),
         };
         
-        let timerInterval = null, db, auth, userId, allHabits = [], selectedHabitId = null, selectedIconId = null, unsubscribe;
+        let timerInterval = null, db, auth, userId, allHabits = [], selectedHabitId = null, selectedIconId = null, selectedDays = [], unsubscribe;
+        let selectedEditIconId = null;
         
         const firebaseConfig = {
             apiKey: "AIzaSyD0MQSEv71JY2PFYXfvGwsdZkzYh_X2dgM",
@@ -324,14 +344,51 @@
         }
         function showModal(modal) { modal.classList.remove('hidden', 'modal-leave'); modal.classList.add('modal-enter'); }
         function hideModal(modal) { modal.classList.remove('modal-enter'); modal.classList.add('modal-leave'); setTimeout(() => modal.classList.add('hidden'), 200); }
+        
+        function populateEditIcons(currentIconId) {
+            dom.editIconSelection.innerHTML = Object.entries(ICONS).map(([id, svg]) => 
+                `<button type="button" class="icon-selection-item w-10 h-10 p-2 rounded-lg bg-slate-700 hover:bg-slate-600 ${id === currentIconId ? 'selected' : ''}" data-icon-id="${id}">${svg}</button>`
+            ).join('');
+            
+            dom.editIconSelection.querySelectorAll('.icon-selection-item').forEach(btn => btn.addEventListener('click', () => {
+                dom.editIconSelection.querySelectorAll('.icon-selection-item').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedEditIconId = btn.dataset.iconId;
+            }));
+        }
+
         function populateIcons() {
-            dom.iconSelection.innerHTML = Object.entries(ICONS).map(([id, svg]) => `<button class="icon-selection-item w-12 h-12 p-2 rounded-lg bg-slate-700 hover:bg-slate-600" data-icon-id="${id}">${svg}</button>`).join('');
+            dom.iconSelection.innerHTML = Object.entries(ICONS).map(([id, svg]) => `<button type="button" class="icon-selection-item w-12 h-12 p-2 rounded-lg bg-slate-700 hover:bg-slate-600" data-icon-id="${id}">${svg}</button>`).join('');
             dom.iconSelection.querySelectorAll('.icon-selection-item').forEach(btn => btn.addEventListener('click', () => {
                 dom.iconSelection.querySelectorAll('.icon-selection-item').forEach(b => b.classList.remove('selected'));
                 btn.classList.add('selected');
                 selectedIconId = btn.dataset.iconId;
             }));
         }
+
+        // Toggle Day Selection visibility
+        dom.typeRadioButtons.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if(e.target.value === 'periodic') {
+                    dom.daySelectionContainer.classList.remove('hidden');
+                } else {
+                    dom.daySelectionContainer.classList.add('hidden');
+                }
+            });
+        });
+
+        // Handle Day Selection
+        dom.daySelectionItems.forEach(item => {
+            item.addEventListener('click', () => {
+                item.classList.toggle('selected');
+                const day = parseInt(item.dataset.day);
+                if (item.classList.contains('selected')) {
+                    if (!selectedDays.includes(day)) selectedDays.push(day);
+                } else {
+                    selectedDays = selectedDays.filter(d => d !== day);
+                }
+            });
+        });
 
         // --- Firebase İşlemleri ---
         onAuthStateChanged(auth, (user) => {
@@ -357,19 +414,18 @@
                 allHabits = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
                 const quitHabits = allHabits.filter(h => h.type === 'quit' || !h.type).sort((a,b) => b.startTime.toDate() - a.startTime.toDate());
-                const buildHabits = allHabits.filter(h => h.type === 'build').sort((a,b) => a.habitName.localeCompare(b.habitName));
+                const buildHabits = allHabits.filter(h => h.type === 'build' || h.type === 'periodic').sort((a,b) => a.habitName.localeCompare(b.habitName));
 
                 renderQuitHabitList(quitHabits);
                 renderBuildHabitList(buildHabits);
 
                 if (selectedHabitId) {
-                    const currentQuitHabit = quitHabits.find(h => h.id === selectedHabitId);
-                    const currentBuildHabit = buildHabits.find(h => h.id === selectedHabitId);
+                    const currentHabit = allHabits.find(h => h.id === selectedHabitId);
 
-                    if (currentQuitHabit && dom.views.tracker.style.display === 'block') {
-                        startTracking(currentQuitHabit);
-                    } else if (currentBuildHabit && dom.views.buildTracker.style.display === 'block') {
-                        startTrackingBuildHabit(currentBuildHabit);
+                    if (currentHabit && (currentHabit.type === 'quit' || !currentHabit.type) && dom.views.tracker.style.display === 'block') {
+                        startTracking(currentHabit);
+                    } else if (currentHabit && (currentHabit.type === 'build' || currentHabit.type === 'periodic') && dom.views.buildTracker.style.display === 'block') {
+                        startTrackingBuildHabit(currentHabit);
                     } else {
                         stopTracking();
                     }
@@ -390,10 +446,19 @@
             let newHabitData;
             if (type === 'quit') {
                 newHabitData = { habitName, iconId, type, startTime: new Date(), restartCount: 0, restartHistory: [], longestStreak: 0 };
-            } else {
+            } else if (type === 'build') {
                 newHabitData = { habitName, iconId, type, createdAt: new Date(), completedDates: [] };
+            } else if (type === 'periodic') {
+                if (selectedDays.length === 0) {
+                    alert("Lütfen en az bir gün seçin.");
+                    return; // Don't save if no days selected
+                }
+                newHabitData = { habitName, iconId, type, createdAt: new Date(), completedDates: [], targetDays: selectedDays };
             }
-            await addDoc(habitsCollectionRef, newHabitData);
+
+            if(newHabitData) {
+                await addDoc(habitsCollectionRef, newHabitData);
+            }
         }
 
         async function deleteHabit(habitId) {
@@ -401,6 +466,7 @@
             const habitDocRef = doc(db, 'users', userId, 'habits', habitId);
             await deleteDoc(habitDocRef);
         }
+        
         async function restartHabit(habitId) {
             if (!userId || !habitId) return;
             const habitDocRef = doc(db, 'users', userId, 'habits', habitId);
@@ -422,10 +488,11 @@
                 longestStreak: newLongest
             });
         }
-        async function updateHabitName(habitId, newName) {
+        
+        async function updateHabitDetails(habitId, newName, newIconId) {
             if (!userId || !habitId || !newName) return;
             const habitDocRef = doc(db, 'users', userId, 'habits', habitId);
-            await updateDoc(habitDocRef, { habitName: newName });
+            await updateDoc(habitDocRef, { habitName: newName, iconId: newIconId });
         }
 
         async function toggleCompletion(habitId) {
@@ -453,29 +520,114 @@
             await updateDoc(habitDocRef, { completedDates: arrayRemove(todayStr) });
             hideModal(dom.uncheckModal);
         }
-        
-        function calculateMaxStreak(dates = []) {
+
+        // Logic for Streak Calculation
+        function calculateStreak(dates = [], targetDays = null) {
+            if (!dates || dates.length === 0) return 0;
+            const dateSet = new Set(dates);
+            let streak = 0;
+            
+            let checkDate = new Date();
+            let checkStr = getLocalDate();
+
+            // Check if today is valid and missed. If so, start from yesterday
+            let isTodayValid = true;
+            if(targetDays) {
+                 isTodayValid = targetDays.includes(checkDate.getDay());
+            }
+
+            if (!dateSet.has(checkStr) && isTodayValid) {
+                 checkDate.setDate(checkDate.getDate() - 1);
+                 const checkOffset = checkDate.getTimezoneOffset() * 60000;
+                 checkStr = new Date(checkDate.getTime() - checkOffset).toISOString().split('T')[0];
+            }
+
+            while (true) {
+                 let isValidDay = true;
+                 if(targetDays) {
+                      isValidDay = targetDays.includes(checkDate.getDay());
+                 }
+
+                 if (isValidDay) {
+                     if(dateSet.has(checkStr)) {
+                         streak++;
+                     } else {
+                         // A required day was missed, break streak
+                         break;
+                     }
+                 }
+                 
+                 // Move to previous day
+                 checkDate.setDate(checkDate.getDate() - 1);
+                 const offset = checkDate.getTimezoneOffset() * 60000;
+                 checkStr = new Date(checkDate.getTime() - offset).toISOString().split('T')[0];
+            }
+            
+            return streak;
+        }
+
+        function calculateMaxStreak(dates = [], targetDays = null) {
             if (!dates || dates.length === 0) return 0;
             const sortedDates = dates.map(d => new Date(d)).sort((a, b) => a - b);
+            const dateSet = new Set(dates);
             
-            let maxStreak = 1;
-            let currentStreak = 1;
-            
-            for (let i = 1; i < sortedDates.length; i++) {
-                const prev = sortedDates[i-1];
-                const curr = sortedDates[i];
-                const diffTime = Math.abs(curr - prev);
-                const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)); 
-                
-                if (diffDays === 1) {
-                    currentStreak++;
-                } else if (diffDays > 1) {
-                    currentStreak = 1;
+            if(!targetDays) {
+                // Original logic for daily habits
+                let maxStreak = 1;
+                let currentStreak = 1;
+                for (let i = 1; i < sortedDates.length; i++) {
+                    const diffTime = Math.abs(sortedDates[i] - sortedDates[i-1]);
+                    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)); 
+                    if (diffDays === 1) currentStreak++;
+                    else if (diffDays > 1) currentStreak = 1;
+                    maxStreak = Math.max(maxStreak, currentStreak);
                 }
-                maxStreak = Math.max(maxStreak, currentStreak);
+                return maxStreak;
             }
+
+            // Logic for Periodic Habits
+            let maxStreak = 0;
+            let currentStreak = 0;
+            
+            if(sortedDates.length === 0) return 0;
+
+            let startDate = new Date(sortedDates[0]);
+            let endDate = new Date(sortedDates[sortedDates.length - 1]);
+            
+            let iterDate = new Date(startDate);
+            
+            while(iterDate <= endDate) {
+                const iterOffset = iterDate.getTimezoneOffset() * 60000;
+                const iterStr = new Date(iterDate.getTime() - iterOffset).toISOString().split('T')[0];
+                
+                if (targetDays.includes(iterDate.getDay())) {
+                    if(dateSet.has(iterStr)) {
+                        currentStreak++;
+                        maxStreak = Math.max(maxStreak, currentStreak);
+                    } else {
+                        currentStreak = 0;
+                    }
+                }
+                iterDate.setDate(iterDate.getDate() + 1);
+            }
+
             return maxStreak;
         }
+
+        // Display Compact Awards
+        function getCompactAwardsHTML(numStars, hasMedal) {
+            if (numStars === 0 && !hasMedal) return '';
+            let html = '<div class="flex items-center gap-2 min-h-[24px] bg-slate-800/50 px-2 py-1 rounded-md">';
+            if (hasMedal) {
+                html += `<div class="flex items-center" title="40 Zincir Madalyası!">${MEDAL_SVG.replace('w-10 h-10', 'w-5 h-5')}</div>`;
+            }
+            if (numStars > 0) {
+                 html += `<div class="flex items-center text-yellow-400 text-xs font-bold" title="${numStars*10} Zincir">${STAR_SVG.replace('w-8 h-8', 'w-4 h-4')} <span class="ml-1">x ${numStars}</span></div>`;
+            }
+            html += '</div>';
+            return html;
+        }
+
 
         // --- Render Fonksiyonları ---
         function renderQuitHabitList(quitHabits) {
@@ -485,13 +637,7 @@
                 const hasMedal = days >= 40;
                 const record = Math.max(habit.longestStreak || 0, days);
                 
-                let awardsHTML = '';
-                if (hasMedal) awardsHTML += `<div title="40 Günlük Başarı Madalyası!">${MEDAL_SVG.replace('w-10 h-10', 'w-6 h-6')}</div>`;
-                const maxStarsToShow = 5;
-                for (let i = 0; i < Math.min(numStars, maxStarsToShow); i++) {
-                    awardsHTML += `<div title="${(i + 1) * 10} Günlük Başarı">${STAR_SVG.replace('w-8 h-8', 'w-5 h-5')}</div>`;
-                }
-                if (numStars > maxStarsToShow) awardsHTML += `<span class="text-xs font-bold text-yellow-500">+${numStars - maxStarsToShow}</span>`;
+                const awardsHTML = getCompactAwardsHTML(numStars, hasMedal);
 
                 return `<button class="w-full text-left p-4 bg-slate-700 border border-slate-600 rounded-lg hover:bg-slate-600 hover:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all flex items-center gap-4" data-habit-id="${habit.id}">
                     <div class="w-10 h-10 flex-shrink-0">${ICONS[habit.iconId] || ICONS['target']}</div>
@@ -499,8 +645,8 @@
                         <p class="font-bold text-white truncate">${habit.habitName}</p>
                         <p class="text-sm text-purple-400 font-semibold">${days} gündür devam ediyor</p>
                         <div class="flex justify-between items-center mt-2">
-                             <div class="flex items-center gap-1 min-h-[24px]">${awardsHTML}</div>
-                             <div class="text-xs text-yellow-500 font-bold flex items-center gap-1" title="En uzun süre">${TROPHY_SVG} Rekor: ${record} gün</div>
+                             ${awardsHTML}
+                             <div class="text-xs text-yellow-500 font-bold flex items-center gap-1" title="En uzun süre">${TROPHY_SVG} Rekor: ${record}</div>
                         </div>
                     </div>
                 </button>`;
@@ -512,36 +658,57 @@
         }
         
         function renderBuildHabitList(buildHabits) {
-            dom.buildingHabitsList.innerHTML = buildHabits.length === 0 ? `<p class="text-center text-slate-500 py-4">Henüz bir zincir başlatmadın.</p>` : buildHabits.map(habit => {
+            dom.buildingHabitsList.innerHTML = buildHabits.length === 0 ? `<p class="text-center text-slate-500 py-4 border border-dashed border-slate-700 rounded">Kayıt yok.</p>` : buildHabits.map(habit => {
                 const completedDates = habit.completedDates || [];
-                const streak = calculateStreak(completedDates);
-                const maxStreak = calculateMaxStreak(completedDates);
+                const targetDays = habit.type === 'periodic' ? habit.targetDays : null;
+                const streak = calculateStreak(completedDates, targetDays);
+                const maxStreak = calculateMaxStreak(completedDates, targetDays);
                 const isCompletedToday = completedDates.includes(getLocalDate());
-
+                
+                // Today check logic for UI
+                const currentDayNum = new Date().getDay();
+                const isRequiredToday = targetDays ? targetDays.includes(currentDayNum) : true;
+                
                 const numStars = Math.floor(streak / 10);
                 const hasMedal = streak >= 40;
-                let awardsHTML = '';
-                if (hasMedal) awardsHTML += `<div title="40 Günlük Zincir Madalyası!">${MEDAL_SVG.replace('w-10 h-10', 'w-6 h-6')}</div>`;
-                const maxStarsToShow = 5;
-                for (let i = 0; i < Math.min(numStars, maxStarsToShow); i++) {
-                    awardsHTML += `<div title="${(i + 1) * 10} Günlük Zincir">${STAR_SVG.replace('w-8 h-8', 'w-5 h-5')}</div>`;
-                }
-                if (numStars > maxStarsToShow) awardsHTML += `<span class="text-xs font-bold text-yellow-500">+${numStars - maxStarsToShow}</span>`;
+                const awardsHTML = getCompactAwardsHTML(numStars, hasMedal);
+                
+                let btnClasses = 'bg-slate-600 text-slate-200 hover:bg-slate-500';
+                let btnText = 'Tik At';
+                let btnDisabled = false;
 
+                if (isCompletedToday) {
+                    btnClasses = 'bg-green-600 text-white';
+                    btnText = 'Tamamlandı ✔';
+                } else if (!isRequiredToday) {
+                     btnClasses = 'bg-slate-700 text-slate-500 opacity-50 cursor-not-allowed border border-slate-600';
+                     btnText = 'Bugün Yok';
+                     // We don't disable so user can still click and force check if they want
+                }
+
+                let streakDisplay = `${streak} zincir`;
+                if (targetDays && targetDays.length > 0) {
+                    const weeks = Math.floor(streak / targetDays.length);
+                    if (weeks > 0) {
+                        streakDisplay += ` <span class="text-xs font-normal text-slate-400">(~${weeks} hafta)</span>`;
+                    }
+                }
 
                 return `<div class="w-full text-left p-2 bg-slate-700 border border-slate-600 rounded-lg flex items-center gap-3">
                     <button class="flex-grow flex items-center gap-3 text-left p-2 rounded-md hover:bg-slate-600" data-habit-id="${habit.id}">
                         <div class="w-10 h-10 flex-shrink-0">${ICONS[habit.iconId] || ICONS['target']}</div>
                         <div class="flex-grow">
-                            <p class="font-bold text-white truncate">${habit.habitName}</p>
+                            <p class="font-bold text-white truncate">${habit.habitName} ${targetDays ? '<span class="text-xs font-normal text-slate-400 ml-1">(Periyodik)</span>' : ''}</p>
                             <div class="flex justify-between items-center">
-                                <p class="text-sm font-semibold ${streak > 0 ? 'text-green-400' : 'text-slate-400'}">${streak} günlük zincir</p>
+                                <p class="text-sm font-semibold ${streak > 0 ? 'text-green-400' : 'text-slate-400'}">${streakDisplay}</p>
                                 <div class="text-xs text-yellow-500 font-bold flex items-center gap-1 mr-2" title="En uzun zincir">${TROPHY_SVG} Rekor: ${maxStreak}</div>
                             </div>
-                             <div class="flex items-center gap-1 mt-1 min-h-[24px]">${awardsHTML}</div>
+                             ${awardsHTML ? `<div class="mt-1">${awardsHTML}</div>` : ''}
                         </div>
                     </button>
-                    <button class="toggle-completion-btn flex-shrink-0 font-bold py-2 px-4 rounded-lg text-sm ${isCompletedToday ? 'bg-green-600 text-white' : 'bg-slate-600 text-slate-200 hover:bg-slate-500'}" data-habit-id="${habit.id}">${isCompletedToday ? '✔' : 'Tik At'}</button>
+                    <button class="toggle-completion-btn flex-shrink-0 font-bold py-2 px-3 rounded-lg text-sm ${btnClasses}" data-habit-id="${habit.id}">
+                        ${btnText}
+                    </button>
                 </div>`;
             }).join('');
             
@@ -559,26 +726,38 @@
         }
         
         function renderChain(days) {
-            dom.chainContainer.innerHTML = days < 1 ? `<p class="text-sm text-slate-500">İlk gününü tamamladığında zincirin başlayacak.</p>` : Array.from({length: days}, (_, i) => `<div class="chain-link w-10 h-10 flex items-center justify-center bg-green-900 text-green-300 font-bold rounded-full border-2 border-green-700" style="animation-delay: ${i * 0.05}s">${i + 1}</div>`).join('');
+            if (days < 1) {
+                dom.chainContainer.innerHTML = `<p class="text-sm text-slate-500">İlk gününü tamamladığında zincirin başlayacak.</p>`;
+                return;
+            }
+            dom.chainContainer.innerHTML = `
+                <div class="flex items-center text-green-400 font-bold award-item text-xl">
+                    <div class="w-10 h-10 flex items-center justify-center bg-green-900 text-green-300 font-bold rounded-full border-2 border-green-700">✔</div>
+                    <span class="ml-2">x ${days}</span>
+                </div>`;
         }
+        
         function renderAwards(days) {
             const numStars = Math.floor(days / 10);
             const hasMedal = days >= 40;
             let awardsHTML = '';
-            if (hasMedal) awardsHTML += `<div class="award-item" title="40 Günlük Başarı Madalyası!">${MEDAL_SVG}</div>`;
-            for (let i = 0; i < numStars; i++) awardsHTML += `<div class="award-item" style="animation-delay:${(i * 0.1) + 0.1}s" title="${(i+1)*10} Günlük Başarı">${STAR_SVG}</div>`;
-            dom.awardsContainer.innerHTML = awardsHTML || `<p class="text-sm text-slate-500">Her 10 günde bir yıldız kazan!</p>`;
+            if (hasMedal) awardsHTML += `<div class="award-item" title="40 Madalyası!">${MEDAL_SVG}</div>`;
+            if (numStars > 0) {
+                awardsHTML += `<div class="flex items-center text-yellow-400 font-bold ml-2 award-item text-xl">${STAR_SVG} <span class="ml-1">x ${numStars}</span></div>`;
+            }
+            dom.awardsContainer.innerHTML = awardsHTML || `<p class="text-sm text-slate-500">Her 10'da bir yıldız kazan!</p>`;
         }
          function renderBuildAwards(streak) {
             const numStars = Math.floor(streak / 10);
             const hasMedal = streak >= 40;
             let awardsHTML = '';
-            if (hasMedal) awardsHTML += `<div class="award-item" title="40 Günlük Zincir Madalyası!">${MEDAL_SVG}</div>`;
-            for (let i = 0; i < numStars; i++) {
-                awardsHTML += `<div class="award-item" style="animation-delay:${(i * 0.1) + 0.1}s" title="${(i+1)*10} Günlük Zincir">${STAR_SVG}</div>`;
+            if (hasMedal) awardsHTML += `<div class="award-item" title="40 Zincir Madalyası!">${MEDAL_SVG}</div>`;
+            if (numStars > 0) {
+                 awardsHTML += `<div class="flex items-center text-yellow-400 font-bold ml-2 award-item text-xl">${STAR_SVG} <span class="ml-1">x ${numStars}</span></div>`;
             }
-            dom.buildAwardsContainer.innerHTML = awardsHTML || `<p class="text-sm text-slate-500">Her 10 günde bir yıldız kazan!</p>`;
+            dom.buildAwardsContainer.innerHTML = awardsHTML || `<p class="text-sm text-slate-500">Her 10 zincirde bir yıldız kazan!</p>`;
         }
+        
         function renderRestarts(history) {
             const restartHistory = history || [];
             if (restartHistory.length === 0) {
@@ -587,14 +766,16 @@
             }
             restartHistory.sort((a, b) => a.restartedAt.toDate() - b.restartedAt.toDate());
 
-            dom.restartsContainer.innerHTML = restartHistory.map((restart) => {
-                const restartDate = restart.restartedAt.toDate();
-                const titleText = `${restart.durationDays} günlük serinin ardından ${restartDate.toLocaleDateString('tr-TR')} tarihinde yeniden başlandı.`;
-                return `<div class="restart-item award-item" title="${titleText}">${RESTART_SVG}</div>`;
-            }).join('');
+            const titleText = restartHistory.map((r, i) => `${i+1}. Başa Dönme: ${r.durationDays} günlük seri (${r.restartedAt.toDate().toLocaleDateString('tr-TR')})`).join('&#10;');
+
+            dom.restartsContainer.innerHTML = `
+                <div class="flex items-center text-red-500 font-bold award-item text-xl cursor-help" title="${titleText}">
+                    ${RESTART_SVG}
+                    <span class="ml-2">x ${restartHistory.length}</span>
+                </div>`;
         }
         
-        function renderChainCalendar(completedDates = []) {
+        function renderChainCalendar(completedDates = [], targetDays = null) {
             const today = new Date();
             const grid = [];
             const dayHeaders = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
@@ -612,48 +793,22 @@
                 const currentDate = new Date(startDate);
                 currentDate.setDate(startDate.getDate() + i);
                 
-                // Fix: Construct local date manually to match stored format
                 const offset = currentDate.getTimezoneOffset() * 60000;
                 const dateStr = new Date(currentDate.getTime() - offset).toISOString().split('T')[0];
                 
                 const isCompleted = completedDates.includes(dateStr);
                 const isToday = dateStr === getLocalDate();
                 
-                grid.push(`<div class="calendar-day h-9 flex items-center justify-center rounded-full border-2 border-slate-700 ${isCompleted ? 'completed' : ''} ${isToday ? 'today' : ''}">${currentDate.getDate()}</div>`);
+                // Determine if this day is required for periodic habits
+                const currentDayNum = currentDate.getDay();
+                const isRequired = targetDays ? targetDays.includes(currentDayNum) : true;
+                
+                grid.push(`<div class="calendar-day h-9 flex items-center justify-center rounded-full border-2 border-slate-700 ${isCompleted ? 'completed' : ''} ${isToday ? 'today' : ''} ${!isRequired ? 'not-required' : ''}">${currentDate.getDate()}</div>`);
             }
             dom.chainCalendarGrid.innerHTML = grid.join('');
         }
 
         // --- Uygulama Mantığı ---
-        function calculateStreak(dates = []) {
-            if (!dates || dates.length === 0) return 0;
-            const dateSet = new Set(dates);
-            let streak = 0;
-            const todayStr = getLocalDate();
-            
-            let currentDate = new Date();
-            
-            // Check if today is missed, then check yesterday
-            const offset = currentDate.getTimezoneOffset() * 60000;
-            let currentStr = new Date(currentDate.getTime() - offset).toISOString().split('T')[0];
-
-            if (!dateSet.has(currentStr)) {
-                 currentDate.setDate(currentDate.getDate() - 1);
-                 currentStr = new Date(currentDate.getTime() - offset).toISOString().split('T')[0];
-                 if (!dateSet.has(currentStr)) {
-                     return 0;
-                 }
-            }
-            
-            while (dateSet.has(currentStr)) {
-                streak++;
-                currentDate.setDate(currentDate.getDate() - 1);
-                currentStr = new Date(currentDate.getTime() - offset).toISOString().split('T')[0];
-            }
-            
-            return streak;
-        }
-
         function updateTimer(startTime) {
             const diff = new Date() - startTime;
             const d = Math.floor(diff / 86400000);
@@ -690,15 +845,26 @@
             selectedHabitId = habit.id;
             dom.buildHabitIconDisplay.innerHTML = ICONS[habit.iconId] || ICONS['target'];
             dom.buildHabitDisplay.innerText = habit.habitName;
-            const completedDates = habit.completedDates || [];
-            const streak = calculateStreak(completedDates);
-            const maxStreak = calculateMaxStreak(completedDates);
             
-            dom.buildStreakDisplay.innerText = `${streak} günlük zincir`;
-            dom.buildRecordDisplay.innerHTML = `${TROPHY_SVG} Rekor: ${maxStreak} gün`;
+            const completedDates = habit.completedDates || [];
+            const targetDays = habit.type === 'periodic' ? habit.targetDays : null;
+            
+            const streak = calculateStreak(completedDates, targetDays);
+            const maxStreak = calculateMaxStreak(completedDates, targetDays);
+            
+            let streakDisplay = `${streak} zincir`;
+            if (targetDays && targetDays.length > 0) {
+                const weeks = Math.floor(streak / targetDays.length);
+                if (weeks > 0) {
+                    streakDisplay += ` <span class="text-sm text-slate-400 font-normal">(~${weeks} hafta)</span>`;
+                }
+            }
+
+            dom.buildStreakDisplay.innerHTML = streakDisplay;
+            dom.buildRecordDisplay.innerHTML = `${TROPHY_SVG} Rekor: ${maxStreak}`;
             
             renderBuildAwards(streak);
-            renderChainCalendar(completedDates);
+            renderChainCalendar(completedDates, targetDays);
             showView('buildTracker');
         }
 
@@ -716,7 +882,16 @@
         dom.showRegisterBtn.addEventListener('click', () => { dom.loginForm.classList.add('hidden'); dom.registerForm.classList.remove('hidden'); dom.authError.textContent = ''; });
         dom.showLoginBtn.addEventListener('click', () => { dom.registerForm.classList.add('hidden'); dom.loginForm.classList.remove('hidden'); dom.authError.textContent = ''; });
         
-        dom.addNewHabitBtn.addEventListener('click', () => { selectedIconId = 'target'; populateIcons(); dom.iconSelection.querySelector('[data-icon-id="target"]').classList.add('selected'); showView('add'); });
+        dom.addNewHabitBtn.addEventListener('click', () => { 
+            selectedIconId = 'target'; 
+            selectedDays = [];
+            dom.daySelectionItems.forEach(item => item.classList.remove('selected'));
+            document.getElementById('type-quit').checked = true;
+            dom.daySelectionContainer.classList.add('hidden');
+            populateIcons(); 
+            dom.iconSelection.querySelector('[data-icon-id="target"]').classList.add('selected'); 
+            showView('add'); 
+        });
         dom.backToListBtn.addEventListener('click', () => showView('list'));
         dom.saveHabitBtn.addEventListener('click', () => { const habitName = dom.habitInput.value.trim(); if (habitName && selectedIconId) { saveHabit(habitName, selectedIconId); dom.habitInput.value = ''; showView('list'); } });
         
@@ -730,16 +905,42 @@
         dom.cancelRestartBtn.addEventListener('click', () => hideModal(dom.restartModal));
         dom.confirmRestartBtn.addEventListener('click', () => { if (selectedHabitId) { restartHabit(selectedHabitId); hideModal(dom.restartModal); } });
 
-        dom.editHabitNameBtn.addEventListener('click', () => { const habit = allHabits.find(h => h.id === selectedHabitId); if(habit) { dom.editHabitNameInput.value = habit.habitName; showModal(dom.editNameModal); } });
+        const openEditModal = () => { 
+            const habit = allHabits.find(h => h.id === selectedHabitId); 
+            if(habit) { 
+                dom.editHabitNameInput.value = habit.habitName; 
+                selectedEditIconId = habit.iconId || 'target';
+                populateEditIcons(selectedEditIconId);
+                showModal(dom.editNameModal); 
+            } 
+        };
+        dom.editHabitNameBtn.addEventListener('click', openEditModal);
+        
         dom.cancelEditNameBtn.addEventListener('click', () => hideModal(dom.editNameModal));
-        dom.confirmEditNameBtn.addEventListener('click', () => { const newName = dom.editHabitNameInput.value.trim(); if(selectedHabitId && newName) { updateHabitName(selectedHabitId, newName); hideModal(dom.editNameModal); } });
+        
+        dom.confirmEditNameBtn.addEventListener('click', () => { 
+            const newName = dom.editHabitNameInput.value.trim(); 
+            if(selectedHabitId && newName && selectedEditIconId) { 
+                updateHabitDetails(selectedHabitId, newName, selectedEditIconId); 
+                hideModal(dom.editNameModal); 
+                
+                // Anında arayüzde göster
+                if (dom.views.tracker.style.display === 'block') {
+                    dom.habitDisplay.innerText = newName;
+                    dom.habitIconDisplay.innerHTML = ICONS[selectedEditIconId] || ICONS['target'];
+                } else if (dom.views.buildTracker.style.display === 'block') {
+                    dom.buildHabitDisplay.innerText = newName;
+                    dom.buildHabitIconDisplay.innerHTML = ICONS[selectedEditIconId] || ICONS['target'];
+                }
+            } 
+        });
         
         dom.tabQuit.addEventListener('click', () => { dom.tabQuit.classList.add('active'); dom.tabBuild.classList.remove('active'); dom.quitHabitsContainer.classList.remove('hidden'); dom.buildHabitsContainer.classList.add('hidden'); });
         dom.tabBuild.addEventListener('click', () => { dom.tabBuild.classList.add('active'); dom.tabQuit.classList.remove('active'); dom.buildHabitsContainer.classList.remove('hidden'); dom.quitHabitsContainer.classList.add('hidden'); });
         
         dom.backFromBuildTrackerBtn.addEventListener('click', stopTracking);
         dom.deleteBuildHabitBtn.addEventListener('click', () => { if (selectedHabitId) showModal(dom.deleteModal); });
-        dom.editBuildHabitNameBtn.addEventListener('click', () => { const habit = allHabits.find(h => h.id === selectedHabitId); if (habit) { dom.editHabitNameInput.value = habit.habitName; showModal(dom.editNameModal); } });
+        dom.editBuildHabitNameBtn.addEventListener('click', openEditModal);
         
         dom.cancelUncheckBtn.addEventListener('click', () => hideModal(dom.uncheckModal));
         dom.confirmUncheckBtn.addEventListener('click', confirmUncheck);
