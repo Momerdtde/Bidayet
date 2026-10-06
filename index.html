@@ -109,7 +109,7 @@
                 <div id="day-selection-container" class="hidden mb-4 p-4 bg-slate-900 rounded-lg border border-slate-700">
                     <h3 class="text-sm font-bold text-slate-400 mb-3 text-center">Hangi Günler Yapılacak?</h3>
                     <div class="flex justify-between gap-1">
-                        <!-- Gün id'leri: 1=Pzt, 2=Sal, ..., 0=Paz (JavaScript Date objesine uygun olarak, ancak pzt'den başlatacağız görselde) -->
+                        <!-- Gün id'leri: 1=Pzt, 2=Sal, ..., 0=Paz (JavaScript Date objesine uygun olarak) -->
                         <button type="button" class="day-selection-item w-10 h-10 rounded-full border border-slate-600 bg-slate-700 flex items-center justify-center text-sm font-bold hover:bg-slate-600" data-day="1">Pz</button>
                         <button type="button" class="day-selection-item w-10 h-10 rounded-full border border-slate-600 bg-slate-700 flex items-center justify-center text-sm font-bold hover:bg-slate-600" data-day="2">Sa</button>
                         <button type="button" class="day-selection-item w-10 h-10 rounded-full border border-slate-600 bg-slate-700 flex items-center justify-center text-sm font-bold hover:bg-slate-600" data-day="3">Ça</button>
@@ -172,7 +172,10 @@
             
             <div id="build-awards-container" class="flex items-center justify-center gap-4 mt-6 min-h-[48px] p-3 bg-slate-900 rounded-lg"></div>
             
-            <h3 class="font-bold text-center my-4 text-slate-400">Başarı Takvimi</h3>
+            <h3 class="font-bold text-center my-4 text-slate-400">
+                Başarı Takvimi
+                <br><span class="text-[10px] font-normal text-slate-500">(Takvimden son 2 güne tıklayarak tik atabilirsiniz)</span>
+            </h3>
             <div id="chain-calendar-grid" class="grid grid-cols-7 gap-2 text-center text-xs p-4 bg-slate-900 rounded-lg border border-slate-700"></div>
             
              <div class="grid grid-cols-1 gap-4 mt-6">
@@ -341,11 +344,11 @@
             document.getElementById('app-container').innerHTML = `<p class="text-red-400 text-center">Firebase yapılandırması eksik veya hatalı.</p>`;
         }
 
-        const getLocalDate = () => {
-            const d = new Date();
+        const getLocalDateStr = (d) => {
             const offset = d.getTimezoneOffset() * 60000;
             return new Date(d.getTime() - offset).toISOString().split('T')[0];
         };
+        const getLocalDate = () => getLocalDateStr(new Date());
 
         // --- Navigasyon ve UI ---
         function showView(viewName) {
@@ -505,84 +508,120 @@
             await updateDoc(habitDocRef, { habitName: newName, iconId: newIconId });
         }
 
-        async function toggleCompletion(habitId) {
-            if (!userId || !habitId) return;
+        window.dateToUncheck = null; // Küresel değişken, hangi günün tikini kaldırdığımızı tutacak
+        window.toggleSpecificDate = function(habitId, dateStr) {
             const habit = allHabits.find(h => h.id === habitId);
             if (!habit) return;
-
-            const todayStr = getLocalDate();
-            const completedDates = habit.completedDates || [];
-            const isCompletedToday = completedDates.includes(todayStr);
-
-            if (isCompletedToday) {
+            const isCompleted = (habit.completedDates || []).includes(dateStr);
+            
+            if (isCompleted) {
                 selectedHabitId = habitId;
+                window.dateToUncheck = dateStr;
                 showModal(dom.uncheckModal);
             } else {
                 const habitDocRef = doc(db, 'users', userId, 'habits', habitId);
-                await updateDoc(habitDocRef, { completedDates: arrayUnion(todayStr) });
+                updateDoc(habitDocRef, { completedDates: arrayUnion(dateStr) });
             }
+        };
+
+        async function toggleCompletion(habitId) {
+            if (!userId || !habitId) return;
+            window.toggleSpecificDate(habitId, getLocalDate());
         }
         
         async function confirmUncheck() {
             if (!userId || !selectedHabitId) return;
-            const todayStr = getLocalDate();
+            const dateStr = window.dateToUncheck || getLocalDate();
             const habitDocRef = doc(db, 'users', userId, 'habits', selectedHabitId);
-            await updateDoc(habitDocRef, { completedDates: arrayRemove(todayStr) });
+            await updateDoc(habitDocRef, { completedDates: arrayRemove(dateStr) });
+            window.dateToUncheck = null;
             hideModal(dom.uncheckModal);
         }
 
         // Logic for Streak Calculation
         function calculateStreak(dates = [], targetDays = null) {
             if (!dates || dates.length === 0) return 0;
-            const dateSet = new Set(dates);
+            const completedSet = new Set(dates);
             let streak = 0;
             
-            let checkDate = new Date();
-            let checkStr = getLocalDate();
+            let d = new Date();
+            d.setHours(0,0,0,0);
+            let todayStr = getLocalDateStr(d);
 
-            // Check if today is valid and missed. If so, start from yesterday
-            let isTodayValid = true;
-            if(targetDays) {
-                 isTodayValid = targetDays.includes(checkDate.getDay());
+            if (!targetDays) {
+                // Her gün (Günlük) Alışkanlık için Zincir Hesaplama
+                let checkDate = new Date(d);
+                let checkStr = todayStr;
+
+                if (!completedSet.has(checkStr)) {
+                     checkDate.setDate(checkDate.getDate() - 1);
+                     checkStr = getLocalDateStr(checkDate);
+                }
+
+                while (completedSet.has(checkStr)) {
+                     streak++;
+                     checkDate.setDate(checkDate.getDate() - 1);
+                     checkStr = getLocalDateStr(checkDate);
+                }
+                return streak;
+            } else {
+                // Periyodik (Haftalık Hedefli) Alışkanlık için Haftalık Zincir Hesaplama
+                let dayOfWeek = d.getDay();
+                let diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                let checkMonday = new Date(d);
+                checkMonday.setDate(d.getDate() - diffToMonday);
+                
+                let currentWeekPerfect = true;
+                let currentWeekFailed = false;
+                
+                for (let targetDay of targetDays) {
+                    let targetDate = new Date(checkMonday);
+                    let offset = targetDay === 0 ? 6 : targetDay - 1;
+                    targetDate.setDate(checkMonday.getDate() + offset);
+                    let targetStr = getLocalDateStr(targetDate);
+                    
+                    if (targetStr <= todayStr) {
+                        if (!completedSet.has(targetStr)) {
+                            currentWeekFailed = true;
+                            currentWeekPerfect = false;
+                        }
+                    } else {
+                        currentWeekPerfect = false; // Gelecekteki günler henüz yapılmadıysa hafta mükemmel değildir
+                    }
+                }
+                
+                if (currentWeekPerfect) streak++;
+                if (currentWeekFailed) return streak; // Bu hafta başarısızsa direkt geçmiş hesaplamayı kes
+                
+                // Geçmiş haftalara bak
+                while(true) {
+                    checkMonday.setDate(checkMonday.getDate() - 7);
+                    let pastWeekPerfect = true;
+                    for (let targetDay of targetDays) {
+                        let targetDate = new Date(checkMonday);
+                        let offset = targetDay === 0 ? 6 : targetDay - 1;
+                        targetDate.setDate(checkMonday.getDate() + offset);
+                        let targetStr = getLocalDateStr(targetDate);
+                        
+                        if (!completedSet.has(targetStr)) {
+                            pastWeekPerfect = false;
+                            break;
+                        }
+                    }
+                    if (pastWeekPerfect) streak++;
+                    else break;
+                }
+                return streak;
             }
-
-            if (!dateSet.has(checkStr) && isTodayValid) {
-                 checkDate.setDate(checkDate.getDate() - 1);
-                 const checkOffset = checkDate.getTimezoneOffset() * 60000;
-                 checkStr = new Date(checkDate.getTime() - checkOffset).toISOString().split('T')[0];
-            }
-
-            while (true) {
-                 let isValidDay = true;
-                 if(targetDays) {
-                      isValidDay = targetDays.includes(checkDate.getDay());
-                 }
-
-                 if (isValidDay) {
-                     if(dateSet.has(checkStr)) {
-                         streak++;
-                     } else {
-                         // A required day was missed, break streak
-                         break;
-                     }
-                 }
-                 
-                 // Move to previous day
-                 checkDate.setDate(checkDate.getDate() - 1);
-                 const offset = checkDate.getTimezoneOffset() * 60000;
-                 checkStr = new Date(checkDate.getTime() - offset).toISOString().split('T')[0];
-            }
-            
-            return streak;
         }
 
         function calculateMaxStreak(dates = [], targetDays = null) {
             if (!dates || dates.length === 0) return 0;
+            const completedSet = new Set(dates);
             const sortedDates = dates.map(d => new Date(d)).sort((a, b) => a - b);
-            const dateSet = new Set(dates);
             
-            if(!targetDays) {
-                // Original logic for daily habits
+            if (!targetDays) {
+                // Günlük Alışkanlıklar için En Uzun Zincir
                 let maxStreak = 1;
                 let currentStreak = 1;
                 for (let i = 1; i < sortedDates.length; i++) {
@@ -593,35 +632,46 @@
                     maxStreak = Math.max(maxStreak, currentStreak);
                 }
                 return maxStreak;
-            }
-
-            // Logic for Periodic Habits
-            let maxStreak = 0;
-            let currentStreak = 0;
-            
-            if(sortedDates.length === 0) return 0;
-
-            let startDate = new Date(sortedDates[0]);
-            let endDate = new Date(sortedDates[sortedDates.length - 1]);
-            
-            let iterDate = new Date(startDate);
-            
-            while(iterDate <= endDate) {
-                const iterOffset = iterDate.getTimezoneOffset() * 60000;
-                const iterStr = new Date(iterDate.getTime() - iterOffset).toISOString().split('T')[0];
+            } else {
+                // Periyodik Alışkanlıklar için En Uzun Haftalık Zincir
+                let earliest = new Date(sortedDates[0]);
+                let latest = new Date(sortedDates[sortedDates.length - 1]);
                 
-                if (targetDays.includes(iterDate.getDay())) {
-                    if(dateSet.has(iterStr)) {
+                let eDay = earliest.getDay();
+                earliest.setDate(earliest.getDate() - (eDay === 0 ? 6 : eDay - 1));
+                
+                let maxStreak = 0;
+                let currentStreak = 0;
+                let todayStr = getLocalDateStr(new Date());
+                
+                let checkMonday = new Date(earliest);
+                while (checkMonday <= latest) {
+                    let isPerfect = true;
+                    let hasValidDays = false;
+                    for (let targetDay of targetDays) {
+                        let targetDate = new Date(checkMonday);
+                        let offset = targetDay === 0 ? 6 : targetDay - 1;
+                        targetDate.setDate(checkMonday.getDate() + offset);
+                        let targetStr = getLocalDateStr(targetDate);
+                        
+                        if (targetStr <= todayStr) {
+                            hasValidDays = true;
+                            if (!completedSet.has(targetStr)) {
+                                isPerfect = false;
+                                break;
+                            }
+                        }
+                    }
+                    if (isPerfect && hasValidDays) {
                         currentStreak++;
                         maxStreak = Math.max(maxStreak, currentStreak);
                     } else {
                         currentStreak = 0;
                     }
+                    checkMonday.setDate(checkMonday.getDate() + 7);
                 }
-                iterDate.setDate(iterDate.getDate() + 1);
+                return maxStreak;
             }
-
-            return maxStreak;
         }
 
         // Display Compact Awards
@@ -685,38 +735,31 @@
                 
                 let btnClasses = 'bg-slate-600 text-slate-200 hover:bg-slate-500';
                 let btnText = 'Tik At';
-                let btnDisabled = false;
 
                 if (isCompletedToday) {
                     btnClasses = 'bg-green-600 text-white';
-                    btnText = 'Tamamlandı ✔';
+                    btnText = '✔ Yapıldı'; // Mobilde sığması için kısaltıldı
                 } else if (!isRequiredToday) {
-                     btnClasses = 'bg-slate-700 text-slate-500 opacity-50 cursor-not-allowed border border-slate-600';
+                     btnClasses = 'bg-slate-700 text-slate-500 opacity-50 border border-slate-600';
                      btnText = 'Bugün Yok';
-                     // We don't disable so user can still click and force check if they want
                 }
 
-                let streakDisplay = `${streak} zincir`;
-                if (targetDays && targetDays.length > 0) {
-                    const weeks = Math.floor(streak / targetDays.length);
-                    if (weeks > 0) {
-                        streakDisplay += ` <span class="text-xs font-normal text-slate-400">(~${weeks} hafta)</span>`;
-                    }
-                }
+                let streakDisplay = targetDays ? `${streak} haftalık zincir` : `${streak} zincir`;
 
-                return `<div class="w-full text-left p-2 bg-slate-700 border border-slate-600 rounded-lg flex items-center gap-3">
-                    <button class="flex-grow flex items-center gap-3 text-left p-2 rounded-md hover:bg-slate-600" data-habit-id="${habit.id}">
-                        <div class="w-10 h-10 flex-shrink-0">${ICONS[habit.iconId] || ICONS['target']}</div>
-                        <div class="flex-grow">
-                            <p class="font-bold text-white truncate">${habit.habitName} ${targetDays ? '<span class="text-xs font-normal text-slate-400 ml-1">(Periyodik)</span>' : ''}</p>
-                            <div class="flex justify-between items-center">
-                                <p class="text-sm font-semibold ${streak > 0 ? 'text-green-400' : 'text-slate-400'}">${streakDisplay}</p>
-                                <div class="text-xs text-yellow-500 font-bold flex items-center gap-1 mr-2" title="En uzun zincir">${TROPHY_SVG} Rekor: ${maxStreak}</div>
+                // Flex-grow, min-w-0 ve text-sm/xs gibi tailwind sınıflarıyla taşma (overflow) sorunu çözüldü
+                return `<div class="w-full text-left p-2 bg-slate-700 border border-slate-600 rounded-lg flex flex-row items-center gap-2">
+                    <button class="flex-grow min-w-0 flex items-center gap-2 sm:gap-3 text-left p-1 sm:p-2 rounded-md hover:bg-slate-600 transition-colors" data-habit-id="${habit.id}">
+                        <div class="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0">${ICONS[habit.iconId] || ICONS['target']}</div>
+                        <div class="flex-grow min-w-0">
+                            <p class="font-bold text-white truncate text-sm sm:text-base">${habit.habitName} ${targetDays ? '<span class="text-[10px] sm:text-xs font-normal text-slate-400 ml-1">(Periyodik)</span>' : ''}</p>
+                            <div class="flex flex-wrap justify-between items-center mt-0.5 sm:mt-1 pr-1">
+                                <p class="text-xs sm:text-sm font-semibold ${streak > 0 ? 'text-green-400' : 'text-slate-400'} truncate mr-2">${streakDisplay}</p>
+                                <div class="text-[10px] sm:text-xs text-yellow-500 font-bold flex flex-shrink-0 items-center gap-0.5" title="En uzun zincir">${TROPHY_SVG} Rekor: ${maxStreak}</div>
                             </div>
                              ${awardsHTML ? `<div class="mt-1">${awardsHTML}</div>` : ''}
                         </div>
                     </button>
-                    <button class="toggle-completion-btn flex-shrink-0 font-bold py-2 px-3 rounded-lg text-sm ${btnClasses}" data-habit-id="${habit.id}">
+                    <button class="toggle-completion-btn flex-shrink-0 font-bold py-1.5 px-2 sm:py-2 sm:px-3 rounded-lg text-xs sm:text-sm whitespace-nowrap transition-colors ${btnClasses}" data-habit-id="${habit.id}">
                         ${btnText}
                     </button>
                 </div>`;
@@ -787,6 +830,12 @@
         
         function renderChainCalendar(completedDates = [], targetDays = null) {
             const today = new Date();
+            const todayStr = getLocalDateStr(today);
+            
+            const twoDaysAgo = new Date(today);
+            twoDaysAgo.setDate(today.getDate() - 2);
+            const twoDaysAgoStr = getLocalDateStr(twoDaysAgo);
+            
             const grid = [];
             const dayHeaders = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
             grid.push(...dayHeaders.map(d => `<div class="font-bold text-slate-500">${d}</div>`));
@@ -809,11 +858,19 @@
                 const isCompleted = completedDates.includes(dateStr);
                 const isToday = dateStr === getLocalDate();
                 
-                // Determine if this day is required for periodic habits
                 const currentDayNum = currentDate.getDay();
                 const isRequired = targetDays ? targetDays.includes(currentDayNum) : true;
                 
-                grid.push(`<div class="calendar-day h-9 flex items-center justify-center rounded-full border-2 border-slate-700 ${isCompleted ? 'completed' : ''} ${isToday ? 'today' : ''} ${!isRequired ? 'not-required' : ''}">${currentDate.getDate()}</div>`);
+                let cursorClass = '';
+                let onClickAttr = '';
+                
+                // Kullanıcının bugüne ve geçmişteki 2 güne tıklayabilmesine izin ver
+                if (dateStr <= todayStr && dateStr >= twoDaysAgoStr && isRequired) {
+                     cursorClass = 'cursor-pointer hover:bg-slate-600 hover:scale-110 transition-all shadow-sm';
+                     onClickAttr = `onclick="window.toggleSpecificDate('${selectedHabitId}', '${dateStr}')" title="Tiki değiştir"`;
+                }
+
+                grid.push(`<div ${onClickAttr} class="calendar-day h-9 flex items-center justify-center rounded-full border-2 border-slate-700 ${isCompleted ? 'completed' : ''} ${isToday ? 'today' : ''} ${!isRequired ? 'not-required' : ''} ${cursorClass}">${currentDate.getDate()}</div>`);
             }
             dom.chainCalendarGrid.innerHTML = grid.join('');
         }
